@@ -69,6 +69,7 @@ router.post('/editor/create', middlewares.guardRoute(['create_exam']), middlewar
 
         let exam = await req.app.locals.db.models.Exam.create({
             title: data.title,
+            questions: []
         });
 
         // await req.app.locals.db.models.Passcode.create({
@@ -263,20 +264,7 @@ router.post('/editor/:examId/delete', middlewares.guardRoute(['delete_exam']), m
 router.get('/editor/:examId/administer', middlewares.guardRoute(['update_exam']), middlewares.getExam(), async (req, res, next) => {
     try {
         let exam = res.exam
-        let passcodes = await req.app.locals.db.models.Passcode.findAll({
-            where: {
-                examId: exam.id
-            },
-            ...{
-                raw: true
-            }
-        })
-
-        passcodes = passcodes.map(o => {
-            o.expired = moment().isSameOrAfter(moment(o.expiredAt))
-            return o
-        })
-
+       
         let examSession = {
             examinees: [],
             description: '',
@@ -287,7 +275,6 @@ router.get('/editor/:examId/administer', middlewares.guardRoute(['update_exam'])
         let data = {
             exam: exam,
             examSession: examSession,
-            passcodes: passcodes,
         }
 
         // return res.send(data)
@@ -383,11 +370,11 @@ router.get('/editor/exam-session/:examSessionId/update', middlewares.guardRoute(
         if(!examSession){
             throw new Error('bb')
         }
-        
+        const wifiName = require('wifi-name')
         let data = {
             exam: exam,
             examSession: examSession,
-            wifiName: network.wifiName(),
+            wifiName: wifiName.sync(),
             connections: network.connections(CONFIG.app.port),
         }
 

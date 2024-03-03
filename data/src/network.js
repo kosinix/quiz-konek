@@ -30,15 +30,17 @@ module.exports = {
     connections: (port) => {
         const os = require('os')
         const networkInterfaces = os.networkInterfaces();
+        // console.log(networkInterfaces)
         let networkInterfacesGroups = Object.keys(networkInterfaces)
-        networkInterfacesGroups = networkInterfacesGroups.filter(groupName => groupName.includes('Wi'))
+        // networkInterfacesGroups = networkInterfacesGroups.filter(groupName => groupName.includes('Wi'))
         let ip4Addresses = networkInterfacesGroups.map(groupName => {
             return networkInterfaces[groupName].filter(iface => {
                 return iface.family === "IPv4"
             }).map(o => o.address).at(0)
-        })
+        }).filter(o => o)
+        // console.log(ip4Addresses)
         ip4Addresses = ip4Addresses.map(ip => `http://${ip}:${port}`)
-        ip4Addresses.push(`http://localhost:${port}`)
+        // ip4Addresses.push(`http://localhost:${port}`)
         return ip4Addresses
     },
 }
