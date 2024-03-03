@@ -1,0 +1,374 @@
+{% extends "document.html" %}
+
+{% block body %}
+<div id="vApp" v-cloak :data-pending="pending" class="col-md-12">
+    {% include 'parts/toaster.html' %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <div class="d-flex align-items-start">
+            <h1 class="h5">Edit Exam</h1>
+        </div>
+        {% include 'editor/button-group-top.html' %}
+    </div>
+    {% include 'parts/flash.html' %}
+    {% include 'editor/tabs.html' %}
+    <div class="tab-content p-3">
+        <form ref="form" v-on:submit.prevent="onSubmit" v-bind:action="url" method="POST" class="form-default">
+            <input type="hidden" value="{{acsrf}}" name="acsrf">
+            <div class="mb-3">
+                <div class="form-row">
+                    <div class="col-7 pr-0">
+                        <div tabindex="0" class="examx" data-view-mode="editor">
+                            <ol class="questions">
+                                <li v-for="(question, questionIndex) in questions" @click="onSelectQuestion($event, questionIndex)" :data-selected="selectedQuestion === questionIndex">
+                                    <div class="body">
+                                        <span class="bullet">${questionIndex + 1}.</span>
+                                        <p>${question.text}</p>
+                                    </div>
+                                    <ol class="choices">
+                                        <template v-for="(choice, choiceIndex) in question.choices">
+                                            <li>
+                                                <span class="letter">${getAlphabet(choiceIndex)}.</span>
+                                                <span>${choice.text}</span>
+                                            </li>
+                                        </template>
+                                    </ol>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+                    <div class="col-5 pl-0 position-relative">
+                        <div class="properties-panel">
+                            <div class="header">Elements</div>
+                            <div class="content">
+                                <div class="elements">
+                                    <button @click.prevent="addQuestion" type="button" class="btn btn-sm btn-outline-primary">
+                                        <svg style="width:16px;height:16px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Outline</title><path fill="currentColor" d="M7,5H21V7H7V5M7,13V11H21V13H7M4,4.5A1.5,1.5 0 0,1 5.5,6A1.5,1.5 0 0,1 4,7.5A1.5,1.5 0 0,1 2.5,6A1.5,1.5 0 0,1 4,4.5M4,10.5A1.5,1.5 0 0,1 5.5,12A1.5,1.5 0 0,1 4,13.5A1.5,1.5 0 0,1 2.5,12A1.5,1.5 0 0,1 4,10.5M7,19V17H21V19H7M4,16.5A1.5,1.5 0 0,1 5.5,18A1.5,1.5 0 0,1 4,19.5A1.5,1.5 0 0,1 2.5,18A1.5,1.5 0 0,1 4,16.5Z" /></svg>
+                                        <span>Add Question</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="header">Properties</div>
+                            <div v-if="selectedQuestion < 0" class="content">
+                                <p class="text-center mb-0"><em>None selected</em></p>
+                            </div>
+                            <div v-else class="content">
+                                <div class="form-group form-row mb-1 d-flex flex-wrap align-items-start">
+                                    <div class="col-3"></div>
+                                    <div class="col-9">
+                                        <button @click.prevent="addChoice($event)" type="button" class="btn btn-sm btn-outline-primary">
+                                            <svg style="width:16px;height:16px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Choice</title><path fill="currentColor" d="M3 7A2 2 0 0 0 1 9V17H3V13H5V17H7V9A2 2 0 0 0 5 7H3M3 9H5V11H3M15 10.5V9A2 2 0 0 0 13 7H9V17H13A2 2 0 0 0 15 15V13.5A1.54 1.54 0 0 0 13.5 12A1.54 1.54 0 0 0 15 10.5M13 15H11V13H13V15M13 11H11V9H13M19 7A2 2 0 0 0 17 9V15A2 2 0 0 0 19 17H21A2 2 0 0 0 23 15V14H21V15H19V9H21V10H23V9A2 2 0 0 0 21 7Z" /></svg>
+                                            <span>Add Choice</span>
+                                        </button>
+                                        <button @click.prevent="deleteQuestion(selectedQuestion, $event)" type="button" class="btn btn-sm btn-outline-danger">
+                                            <span>Delete Question</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-group form-row mb-1 d-flex flex-wrap align-items-start">
+                                    <label for="questionText" class="col-3 mb-0 text-right">Question</label>
+                                    <div class="col-9">
+                                        <textarea name="questionText" id="questionText" @input="setQuestionProp($event, selectedQuestion, 'text')" class="form-control">${getQuestionProp(selectedQuestion, 'text')}</textarea>
+                                    </div>
+                                </div>
+                                <div v-for="(choice, choiceIndex) in questions[selectedQuestion]['choices']" class="form-group form-row mb-1 d-flex flex-wrap align-items-start">
+                                    <div class="col-3 text-right">
+                                        <div class="custom-control custom-checkbox">
+                                            <input v-model="questions[selectedQuestion]['choices'][choiceIndex]['isCorrect']" value="true" type="checkbox" class="custom-control-input" :id="`selectedQuestionChoice${choiceIndex}`">
+                                            <label class="custom-control-label" :for="`selectedQuestionChoice${choiceIndex}`">${getAlphabet(choiceIndex)}</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-9 d-flex">
+                                        <textarea v-model="questions[selectedQuestion]['choices'][choiceIndex]['text']" class="form-control"></textarea>
+                                        <button @click="deleteChoice(selectedQuestion, choiceIndex, $event)" type="button" class="btn btn-sm text-danger">X</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center">
+                <input type="hidden" :value="payload" name="payload">
+                <button class="btn btn-primary">
+                    <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+                        <path fill="#FFF" d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z" />
+                    </svg>
+                    <span class="mr-2">Save</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+    var acsrf = '{{acsrf}}';
+    var exam = {{ exam|default ({}, true) | stringify | safe}};
+    var uniqueId = (length = 8) => {
+        return parseInt(Math.ceil(Math.random() * Date.now()).toPrecision(length).toString().replace(".", ""))
+    }
+    var defaultQuestion = {
+        id: uniqueId(),
+        text: '',
+        choices: []
+    }
+    var defaultChoice = {
+        id: uniqueId(),
+        text: '',
+        isCorrect: false
+    }
+    
+    var vApp = new Vue({
+        el: '#vApp',
+        delimiters: ["${", "}"],
+        mixins: [],
+        data: {
+            pending: false,
+            ok: '',
+            error: '',
+            url: `/editor/{{exam.id}}/update`,
+            selected: -1,
+            examId: exam.id,
+            questions: exam.questions,
+            selectedQuestion: -1
+        },
+        mounted: function () {
+            const me = this;
+            // jQuery('#customModal').modal('show')
+
+            $('body').on("paste", `div[contenteditable="true"]`, function ($e) {
+                let e = $e.originalEvent
+                e.preventDefault();
+                var text = e.clipboardData.getData("text/plain");
+                document.execCommand("insertHTML", false, text);
+            });
+
+        },
+        computed: {
+            payload: function () {
+                return JSON.stringify({
+                    acsrf: acsrf,
+                    questions: this.questions
+                })
+            }
+        },
+        methods: {
+            noop: function () { },
+            getAlphabet: function (choiceIndex) {
+                let alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+                return alphabet[choiceIndex]
+            },
+            selectChoice: function (questionIndex, choiceIndex) {
+                const me = this;
+                if (me.questions[questionIndex].selected === choiceIndex) {
+                    me.questions[questionIndex].selected = -1
+                } else {
+                    me.questions[questionIndex].selected = choiceIndex
+                }
+            },
+            addQuestion: function (style) {
+                var me = this;
+                var item = {
+                    id: uniqueId(),
+                    text: 'Your multiple choice question?',
+                    choices: [
+                        {
+                            id: uniqueId(),
+                            text: 'Choice A',
+                            isCorrect: false
+                        },
+                        {
+                            id: uniqueId(),
+                            text: 'Choice A',
+                            isCorrect: false
+                        }
+                    ]
+                }
+
+                // A question is selected
+                if (me.selectedQuestion > -1 && me.selectedQuestion < me.questions.length - 1) {
+                    me.questions.splice(me.selectedQuestion + 1, 0, item);
+                    me.$nextTick(function () {
+                        me.selectedQuestion = me.selectedQuestion + 1
+                    });
+                } else {
+                    me.questions.push(item)
+                    me.$nextTick(function () {
+                        me.selectedQuestion = me.questions.length - 1
+                    });
+                }
+            },
+            addChoice: function (e) {
+                var me = this;
+                me.questions[me.selectedQuestion]['choices'].push({
+                    id: uniqueId(),
+                    text: 'Option',
+                    isCorrect: false
+                })
+                e.stopPropagation()
+            },
+            onSelectQuestion: function (e, index) {
+                var me = this;
+                me.selectedQuestion = index
+                e.stopPropagation()
+            },
+            moveUp: function (e, index) {
+                e.stopPropagation()
+                var me = this;
+                if (index - 1 >= 0) {
+
+                    let rows = [me.questions[index - 1], me.questions[index]];
+                    // Remove element at index and element before it. Then insert them at swap position.
+                    me.questions.splice(index - 1, 2, rows[1], rows[0]);
+
+                    me.$nextTick(function () {
+                        me.selected = index - 1
+                    });
+                }
+            },
+            moveDown: function (e, index) {
+                e.stopPropagation()
+                var me = this;
+                if (index + 1 < me.questions.length) {
+
+                    let rows = [me.questions[index], me.questions[index + 1]];
+                    // Remove element at index and element after it. Then insert them at swap position.
+                    me.questions.splice(index, 2, rows[1], rows[0]);
+
+                    me.$nextTick(function () {
+                        me.selected = index + 1
+                    });
+                }
+            },
+            moveLeft: function (index) {
+                var me = this;
+                me.questions[index].indent = Math.max(0, me.questions[index].indent - 1)
+            },
+            moveRight: function (index) {
+                var me = this;
+                me.questions[index].indent = Math.min(10, me.questions[index].indent + 1)
+            },
+            clone: function (e, index) {
+                e.stopPropagation()
+                var me = this;
+
+                me.questions.splice(index + 1, 0, JSON.parse(JSON.stringify(me.questions[index])));
+
+                me.$nextTick(function () {
+                    me.selected = index + 1
+                });
+            },
+            deleteChoice: function (selectedQuestion, choiceIndex, e) {
+                var me = this;
+                me.$delete(me.questions[selectedQuestion]['choices'], choiceIndex)
+            },
+            deleteQuestion: function (selectedQuestion, e) {
+                var me = this;
+                e.stopPropagation()
+
+                me.$delete(me.questions, selectedQuestion)
+                me.selectedQuestion = selectedQuestion - 1
+            },
+            getQuestionProp: function (index, propName) {
+                var me = this;
+                if (index < 0 || index > me.questions.length - 1) return ''
+                try {
+                    return me.questions[index][propName] || ''
+                } catch (err) {
+                    console.error(err)
+                    return ''
+                }
+            },
+            setQuestionProp: function (e, index, propName) {
+                var me = this;
+                try {
+                    if (index >= 0 && me.questions.at(index)) {
+                        var value = e.target.value
+                        me.questions[index][propName] = value
+                    }
+                } catch (err) {
+                    console.error(err)
+                }
+            },
+            onSubmit: function(){
+                const me = this;
+                me.pending = true
+                me.$nextTick(function() {
+                    fetch(`/editor/${me.examId}/update`, {
+                        method: 'POST',
+                        body: me.payload,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    }).then(async function(response){
+                        if (response.ok) {
+                            return response.json();
+                        }
+                        throw new Error(await response.text())
+                        
+                    }).then(function(responseJson){
+                        me.ok = 'Exam updated.'
+                        me.$nextTick(function() {
+                            jQuery('#toast-ok').toast('show')
+                        })
+
+                    }).catch(async function(error){
+                        console.error(error)
+                        me.error = error.message
+                        me.$nextTick(function() {
+                            jQuery('#toast-error').toast('show')
+                        })
+
+                    }).then(function(){
+                        me.pending = false
+                    });
+                });
+            }
+        }
+    });
+
+    jQuery(document).ready(function ($) {
+        $(document).on('click', '.examx, .elements, .questions', function (e) {
+            e.stopPropagation()
+        })
+        $(document).on('click', '.properties-panel', function (e) {
+            e.stopPropagation()
+        })
+        $(document).on('click', 'body', function (e) {
+            vApp.selected = -1
+            vApp.selectedQuestion = -1
+        })
+        $(document).on('keydown', '.examx', function (e) {
+            // console.log(e.which)
+            if (vApp.selected > -1) {
+                if (e.which === 37) {
+                    vApp.moveLeft(vApp.selected)
+                }
+                if (e.which === 39) {
+                    vApp.moveRight(vApp.selected)
+                }
+                if (e.which === 38) {
+                    vApp.moveUp(e, vApp.selected)
+                }
+                if (e.which === 40) {
+                    vApp.moveDown(e, vApp.selected)
+                }
+                if (e.ctrlKey && e.which === 68) { // CTRL + D
+                    vApp.clone(e, vApp.selected)
+                }
+                e.preventDefault()
+                e.stopImmediatePropagation()
+                e.stopPropagation()
+            }
+        })
+
+        $(window).scroll(function (event) {
+            var st = $(this).scrollTop();
+            $('.properties-panel').css({ top: `${st}px` });
+        });
+    })
+</script>
+{% endblock %}

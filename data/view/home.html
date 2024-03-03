@@ -1,0 +1,73 @@
+{% extends "document-public.html" %}
+
+{% block body %}
+<div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8 ">
+                <div class="text-center mt-5">
+                    <h1 class="h1"><img width="250px" src="/images/logo.png" alt="QuizKonek"></h1>
+                    <h6 class="h5">The Paperless Exam App</h6>
+                    <p class=" mb-4"><em>By Nico Amarilla</em></p>
+                    <p>The #1 exam app. Used all over the world.</p>
+                </div>
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <div class="grid">
+                    <div class="grid-item">
+                        <img src="/images/grid1.jpg" alt="">
+                    </div>
+                    <div class="grid-item grid-item--width2">
+                        <img src="/images/grid2.jpg" alt="">
+                    </div>
+                    <div class="grid-item">
+                        <img src="/images/grid3.jpg" alt="">
+                    </div>
+                    <div class="grid-item grid-item--height2">
+                        <img src="/images/grid4.jpg" alt="">
+                    </div>
+                    <div class="grid-item">
+                        <img src="/images/grid5.jpg" alt="">
+                    </div>
+                    <div class="grid-item">
+                        <img src="/images/grid5.jpg" alt="">
+                    </div>
+                    <div class="grid-item">
+                        <img src="/images/grid6.jpg" alt="">
+                    </div>
+                    <div class="grid-item grid-item--width2">
+                        <img src="/images/grid7.jpg" alt="">
+                    </div>
+                    <div class="grid-item">
+                        <img src="/images/grid8.jpg" alt="">
+                    </div>
+                    
+                    <div class="grid-item">
+                        <img src="/images/grid9.jpg" alt="">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<p class="text-center mb-4"><em>v 2024.02</em></p>
+
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script src="{{app.url}}/js/masonry.pkgd.min.js"></script>
+<script>
+var msnry = new Masonry( '.grid', {
+  // options
+  itemSelector: '.grid-item',
+  columnWidth: 200,
+ 
+  fitWidth : true
+});
+</script>
+{% endblock %}

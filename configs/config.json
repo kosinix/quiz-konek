@@ -1,0 +1,73 @@
+{
+  "app": {
+    "title": "QuizKonek",
+    "description": "QuizKonek",
+    "port": "9400",
+    "url": "http://localhost:9400",
+    "dir": "${APP_DIR}",
+    "dirs": {
+      "data": "${APP_DIR}/data",
+      "src": "${APP_DIR}/src",
+      "public": "${APP_DIR}/data/public",
+      "view": "${APP_DIR}/data/view",
+      "upload": "${APP_DIR}/data/upload"
+    }
+  },
+  "socketio": {
+    "cors": {
+      "origin": "*"
+    }
+  },
+  "express": {
+    "trustProxy": true
+  },
+  "nunjucks": {
+    "loader": {
+      "watch": false,
+      "noCache": true
+    },
+    "environment": {
+      "autoescape": true,
+      "throwOnUndefined": false,
+      "trimBlocks": false,
+      "lstripBlocks": false
+    }
+  },
+  "session": {
+    "name": "quiz_konek_app_sid",
+    "store": {
+      "db": "sessions.db",
+      "dir": "${APP_DIR}/data"
+    },
+    "cookie": {
+      "httpOnly": false,
+      "maxAge": 31536000000,
+      "secure": false
+    }
+  },
+  "sqlite": {
+    "username": "",
+    "db": "${APP_DIR}/data/app.db"
+  },
+  "aws": {
+    "region": "ap-southeast-1",
+    "bucket1": {
+      "name": "codefleet-hris-storage",
+      "url": "https://codefleet-hris-storage.s3-ap-southeast-1.amazonaws.com/files-dev/",
+      "prefix": "files-dev"
+    }
+  },
+  "ipCheck": false,
+  "ip": {
+    "allowed": [
+      "::1"
+    ]
+  },
+  "minPasswordLength": 8,
+  "minSaltLength": 8,
+  "recaptchav3": {
+    "enable": false,
+    "clientKey": "6LcB1_scAAAAABxNHSvZ1gnl5ZpTKZCoWa_JcYkV"
+  },
+  "loginDelay": 0
+}

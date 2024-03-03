@@ -1,0 +1,7 @@
+{% extends "document-preview.html" %}
+
+{% block body %}
+<div class="col-12">
+    <iframe class="bg-dark" width="100%" height="800" src="{{exam.selected.link|replace('/view?usp=drive_link', '/preview')}}" frameborder="0"></iframe>
+</div>
+{% endblock %}

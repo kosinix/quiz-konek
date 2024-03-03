@@ -1,0 +1,39 @@
+{% extends "document.html" %}
+
+{% block body %}
+<div class="col-md-12">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <div class="d-flex align-items-start">
+            <h1 class="h5">View All </h1>
+        </div>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group mr-2">
+                <a href="/editor/create" class="btn btn-sm btn-outline-primary">Create</a>
+            </div>
+        </div>
+    </div>
+    {% include 'parts/flash.html' %}
+    <div class="tab-content p-3">
+        {% if exams.length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-sm table-striped border mb-0">
+                    <tr>
+                        <th>Title</th>
+                        <th style="width: 15%;">Created At</th>
+                        <th style="width: 15%;"></th>
+                    </tr>
+                    {% for exam in exams %}
+                    <tr>
+                        <td><a href="/editor/{{exam.id}}/update">{{exam.title}}</a></td>
+                        <td>{{exam.createdAt|format_date('MMM DD, YYYY')}}</td>
+                        <td class="text-right"><a href="/editor/{{exam.id}}/update">Edit</a></td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% else %}
+            <p>No exam. </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,231 @@
+{% extends "document.html" %}
+
+{% block body %}
+<div id="vApp" v-cloak :data-pending="pending" class="col-md-12">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <div class="d-flex align-items-start">
+            <h1 class="h3">Update Exam</h1>
+        </div>
+        {% include 'editor/button-group-top.html' %}
+    </div>
+    <div>
+        {% include 'editor/tabs.html' %}
+    </div>
+    <div class="tab-content p-3">
+        <form ref="form" v-on:submit.prevent="onSubmit" action="/editor/{{exam.id}}/administer" method="POST" class="form-default">
+            <input type="hidden" name="acsrf" value="{{acsrf}}">
+            <div class="form-group">
+                <label for="examineesIn">Input Examinees List:</label>
+                <textarea v-model="examineesIn" id="examineesIn" placeholder="Paste in the following format: Last Name, First Name, Middle Name, Suffix" class="form-control mb-2"></textarea>
+                <button :disabled="!examineesIn" @click="onExamineesIn" class="btn btn-sm btn-success" type="button">&raquo;&raquo;</button>
+                <hr>
+                <h6 class="h6">Examinees: <span class="text-danger">*</span> <em>${examSession.examinees.length}</em>
+                    <button v-if="examSession.examinees.length > 0" @click.prevent="toggle('flexRow', 'true', 'false')" type="button" class="btn btn-light btn-sm">Arrange</button>
+                </h6>
+                <div class="examinees d-flex flex-wrap" v-bind:data-flex-row="flexRow">
+                    <template v-if="examSession.examinees.length > 0">
+                        <div v-for="(examinee, examineeIndex) in examSession.examinees" class="d-flex justify-content-between">
+                            <div class="name">${examinee.lastName}, ${examinee.firstName}</div>
+                            <div @click.prevent="deleteExaminee(examineeIndex)" class="delete btn btn-outline-danger">X</div>
+                        </div>
+                    </template>
+                    <template v-else>
+                        <p class="text-danger">Please add examinees.</p>
+                    </template>
+                    <input type="hidden" name="examinees" :value="stringify(examSession.examinees)">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="passcode">Passcode: <span class="text-danger">*</span></label>
+                <div class="input-group">
+                    <input type="text" readonly class="form-control" v-model="examSession.passcode" name="passcode" id="passcode">
+                    <div class="input-group-append">
+                        <button @click.prevent="copyText(`${examSession.passcode}`, `Passcode copied.`)" class="copy-link btn btn-outline-primary" type="button">Copy</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="date">Date &amp; Time: <span class="text-danger">*</span></label>
+                <input type="datetime-local" v-model="examSession.date" name="date" id="date" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="venue">Venue</label>
+                <input type="text" v-model="examSession.venue" name="venue" id="venue" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea v-model="examSession.description" name="description" id="description" placeholder="" class="form-control"></textarea>
+            </div>
+            <hr>
+            <div class="form-group text-center">
+                <button class="btn btn-primary btn-lg">Administer</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+    var acsrf = '{{acsrf}}';
+    var exam = {{ exam|default ({}, true) | stringify | safe}};
+    var examSession = {{ examSession|default ({}, true) | stringify | safe}};
+    var passcodes = {{ passcodes|default ([], true) | stringify | safe}};
+    var vApp = new Vue({
+        el: '#vApp',
+        delimiters: ["${", "}"],
+        mixins: [
+            VueMixins
+        ],
+        data: {
+            pending: false,
+            link: `/view/{{exam.id}}`,
+            examineesIn: `Angeles, Charmel Jay E.
+Cagayan, Justin G.
+Chavez, Charles Ivans Hughes C.
+Chavez, Keisha Camille D.
+Denuyo, John Jeffrey G.
+Dimo-os, Mary Jane C.
+Dogomeo, Anna Lee Dizon
+Dumam-ag, Marjorie P.
+Galvez, Justine S.
+Gania, Aleja G.
+Gasangan, Daniel C.
+Jumilla, Eric John G.
+Lastimoso, Gretchen V.
+Librezana, Joshua E.
+Luyao, Geraldine B.
+Nanagad, Paolo M.
+Revicencio, Niña Marie A.
+Tanaleon, Kaela Chelsea T.
+Trance, Angel G.`,
+            ipAddresses: [],
+            exam: exam,
+            passcodes: passcodes,
+            newPasscode: {
+                passcode: '',
+                date: '',
+                expiry: ''
+            },
+            flexRow: 'true',
+            examSession: examSession
+        },
+        mounted: function () {
+            const me = this;
+            // jQuery('#customModal').modal('show')
+            me.onExamineesIn()
+           
+        },
+        computed: {
+            
+        },
+        methods: {
+            stringify: function(payload){
+                return JSON.stringify(payload)
+            },
+            toggle: function(propPath, a, b){
+                var me = this;
+                me[propPath] = (me[propPath] === a) ? b : a
+            },
+            copyText: function(text, message = 'Copied to clipboard.'){
+                navigator.clipboard.writeText(text).then(() => {
+                    alert(message)
+                })
+            },
+            onExamineesIn: function(){
+                var me = this;
+                let names = `${me.examineesIn}`.replace(/( )+/g, ' ').split("\n")
+
+                names = names.map( name => {
+                    let parts = name.split(',').map( p => `${p}`.trim())
+                    let lastName = parts.at(0)
+                    let firstName = parts.at(1)
+                    let middleName = parts.at(2)
+                    let suffix = parts.at(3)
+
+                    return {
+                        lastName: lastName,
+                        firstName: firstName,
+                        middleName: middleName,
+                        suffix: suffix,
+                    }
+                })
+                // console.log(names)
+                names.forEach( name => {
+                    me.examSession.examinees.push(name)
+                })
+                me.examineesIn = ''
+            },
+            deleteExaminee: function (examineeIndex) {
+                var me = this;
+                me.$delete(me.examSession.examinees, examineeIndex)
+            },
+            showGenerate: function () {
+                var me = this;
+                me.pending = true;
+                me.$nextTick(function () {
+                    fetch(`/editor/generate-passcode`, {
+                        method: 'POST',
+                        body: me.payload,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    }).then(async function (response) {
+                        if (response.ok) {
+                            return response.json();
+                        }
+                        throw new Error(await response.text())
+                    }).then(function (responseJson) {
+                        window.location.reload()
+                    }).catch(async function (error) {
+                        console.error(error)
+                    }).then(function () {
+                        me.pending = false
+                    });
+                });
+            },
+            deletePasscode: function (passcodeId) {
+                var me = this;
+                me.pending = true;
+                me.$nextTick(function () {
+                    fetch(`/editor/delete-passcode`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            acsrf: acsrf,
+                            passcodeId: passcodeId,
+                        }),
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    }).then(async function (response) {
+                        if (response.ok) {
+                            return response.json();
+                        }
+                        throw new Error(await response.text())
+
+                    }).then(function (responseJson) {
+                        window.location.reload(true)
+                    }).catch(async function (error) {
+                        console.error(error)
+                    }).then(function () {
+                        me.pending = false
+                    });
+                });
+            },
+            onSubmit: function () {
+                const me = this;
+                me.$nextTick(function () {
+                    me.$refs.form.submit()
+                });
+            }
+        }
+    });
+
+    jQuery(document).ready(function ($) {
+        
+    })
+</script>
+{% endblock %}

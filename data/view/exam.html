@@ -1,0 +1,204 @@
+{% extends "document-exam.html" %}
+
+{% block body %}
+<div id="vApp" v-cloak>
+    <header>
+        <nav class="container">
+            <div class="row">
+                <div class="col-12 pt-3 pb-3">
+                    <h1 @click="toggleFullScreen()" class="h1 text-center">HTML Quiz 1</h1>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <div class="row">
+            <div class="col-12 pt-5 pb-5">
+                <ol class="questions">
+                    <li v-for="(question, questionIndex) in questions">
+                        <p>${question.text}</p>
+                        <ol type="A">
+                            <template v-for="(choice, choiceIndex) in question.choices">
+                                <li @click="selectChoice(questionIndex, choiceIndex)"
+                                    :data-selected="question.selected === choiceIndex">
+                                    <span class="letter">${getAlphabet(choiceIndex)}.</span>
+                                    <span>${choice}</span>
+                                </li>
+                            </template>
+                        </ol>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+            console.log('leaving tab is not allowed!');
+        } else {
+            // console.log('well back');
+        }
+    }, false);
+
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
+    window.addEventListener('beforeunload', function (e) {
+        // Cancel the event
+        e.preventDefault(); // If you prevent default behavior in Mozilla Firefox prompt will always be shown
+        // Chrome requires returnValue to be set
+        e.returnValue = '';
+    });
+    var vApp = new Vue({
+        el: '#vApp',
+        delimiters: ["${", "}"],
+        mixins: [],
+        data: {
+            pending: false,
+            questions: [
+                {
+                    id: 'q1',
+                    text: `What is the objective of learning HTML?`,
+                    answer: 'b',
+                    selected: -1,
+                    choices: [
+                        `To master database management`,
+                        `To be able to create simple web pages`,
+                        `To understand programming logic`,
+                        `To become proficient in cybersecurity`,
+                    ]
+                },
+                {
+                    id: 'q2',
+                    text: `What is web development primarily about? `,
+                    answer: 'b',
+                    selected: -1,
+                    choices: [
+                        `Designing logos and branding material for websites`,
+                        `Building and maintaining websites or web applications `,
+                        `Creating mobile applications for websites`,
+                        `Networking and server management for web apps`,
+                    ]
+                },
+                {
+                    id: 'q3',
+                    text: `What is an attribute in an HTML tag? `,
+                    answer: 'b',
+                    selected: -1,
+                    choices: [
+                        `Another HTML element nested inside the main tag`,
+                        `A value that defines the element's link in an image tag`,
+                        `Extra information about the element within the opening tag`,
+                        `A mandatory part of every HTML tag `,
+                    ]
+                },
+                {
+                    id: 'q3',
+                    text: `What is an attribute in an HTML tag? `,
+                    answer: 'b',
+                    selected: -1,
+                    choices: [
+                        `Another HTML element nested inside the main tag`,
+                        `A value that defines the element's link in an image tag`,
+                        `Extra information about the element within the opening tag`,
+                        `A mandatory part of every HTML tag `,
+                    ]
+                },
+                {
+                    id: 'q3',
+                    text: `What is an attribute in an HTML tag? `,
+                    answer: 'b',
+                    selected: -1,
+                    choices: [
+                        `Another HTML element nested inside the main tag`,
+                        `A value that defines the element's link in an image tag`,
+                        `Extra information about the element within the opening tag`,
+                        `A mandatory part of every HTML tag `,
+                    ]
+                },
+                {
+                    id: 'q3',
+                    text: `What is an attribute in an HTML tag? `,
+                    answer: 'b',
+                    selected: -1,
+                    choices: [
+                        `Another HTML element nested inside the main tag`,
+                        `A value that defines the element's link in an image tag`,
+                        `Extra information about the element within the opening tag`,
+                        `A mandatory part of every HTML tag `,
+                    ]
+                },
+                {
+                    id: 'q3',
+                    text: `What is an attribute in an HTML tag? `,
+                    answer: 'b',
+                    selected: -1,
+                    choices: [
+                        `Another HTML element nested inside the main tag`,
+                        `A value that defines the element's link in an image tag`,
+                        `Extra information about the element within the opening tag`,
+                        `A mandatory part of every HTML tag `,
+                    ]
+                },
+                {
+                    id: 'q3',
+                    text: `What is an attribute in an HTML tag? `,
+                    answer: 'b',
+                    selected: -1,
+                    choices: [
+                        `Another HTML element nested inside the main tag`,
+                        `A value that defines the element's link in an image tag`,
+                        `Extra information about the element within the opening tag`,
+                        `A mandatory part of every HTML tag `,
+                    ]
+                },
+                {
+                    id: 'q3',
+                    text: `What is an attribute in an HTML tag? `,
+                    answer: 'b',
+                    selected: -1,
+                    choices: [
+                        `Another HTML element nested inside the main tag`,
+                        `A value that defines the element's link in an image tag`,
+                        `Extra information about the element within the opening tag`,
+                        `A mandatory part of every HTML tag `,
+                    ]
+                }
+            ]
+        },
+        computed: {
+
+        },
+        mounted: function () {
+            var me = this;
+
+        },
+        methods: {
+            getAlphabet: function (choiceIndex) {
+                let alphabet = ['A', 'B', 'C', 'D', 'E']
+                return alphabet[choiceIndex]
+            },
+            selectChoice: function (questionIndex, choiceIndex) {
+                const me = this;
+                if (me.questions[questionIndex].selected === choiceIndex) {
+                    me.questions[questionIndex].selected = -1
+                } else {
+                    me.questions[questionIndex].selected = choiceIndex
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

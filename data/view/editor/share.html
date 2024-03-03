@@ -1,0 +1,217 @@
+{% extends "document.html" %}
+
+{% block body %}
+<div id="vApp" v-cloak :data-pending="pending" class="col-md-12">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <div class="d-flex align-items-start">
+            <h1 class="h3">Update Exam</h1>
+        </div>
+        {% include 'editor/button-group-top.html' %}
+    </div>
+    {% include 'editor/tabs.html' %}
+    <div class="tab-content p-3">
+        <form ref="form" v-on:submit.prevent="onSubmit" v-bind:action="url" method="POST" class="form-default">
+            <input type="hidden" name="acsrf" value="{{acsrf}}">
+            <div class="form-group">
+                <label for="link">Link of Exam</label>
+                <div class="input-group">
+                    <input type="text" readonly class="form-control" :value="latestUrl" />
+                    <div class="input-group-append">
+                        <button class="copy-link btn btn-outline-primary" type="button">Copy </button>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex flex-wrap align-items-center mb-3">
+                <h2 class="h6 mb-0 mr-2">Passcodes</h2>
+                <button @click.prevent="showGenerate" class="btn btn-outline-primary btn-sm">Generate</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-passcodes table-sm table-striped border">
+                    <tr>
+                        <td width="5%">Passcode</td>
+                        <td>Link</td>
+                        <td>Created</td>
+                        <td>Expiry</td>
+                        <td class="text-center">Delete</td>
+                    </tr>
+                    <tr v-for="p in passcodes" :data-expired="`${p.expired}`">
+                        <td>${p.code}</td>
+                        <td>
+                            <div class="input-group input-group-sm">
+                                <input :value="`{{CONFIG.app.url}}/view-exam/${p.code}`" type="text" readonly
+                                    class="form-control form-control-sm" />
+                                <div class="input-group-append">
+                                    <button class="copy-link btn btn-outline-primary" type="button">Copy</button>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-small">${p.createdAt|formatDate('MMM DD, YYYY hh:mm A')}</td>
+                        <td class="text-small">
+                            <span v-if="p.expired" class="text-danger" :title="p.expiredAt|formatDate('MMM DD, YYYY hh:mm A')">Expired ${p.expiredAt|fromNow}</span>
+                            <span v-if="!p.expired" class="text-success">${p.expiredAt|formatDate('MMM DD, YYYY hh:mm A')}</span>
+
+                        </td>
+                        <td width="5%" class="text-center">
+                            <a @click="deletePasscode(p.id)" href="#" class="text-danger">X</a>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </form>
+    </div>
+    <div id="customModal" class="modal fade" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Passcode Properties</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body pl-4 pr-4">
+                    <div class="row mb-2 align-items-center">
+                        <div class="col-sm-3">Passcode:</div>
+                        <div class="col-sm-9">
+                            <input v-model="newPasscode.passcode" type="text" id="newPasscode.passcode"
+                                class="form-control" />
+                        </div>
+                    </div>
+                    <div class="row mb-2 align-items-center">
+                        <div class="col-sm-3">Link:</div>
+                        <div class="col-sm-9">
+                            <input v-model="newPasscode.link" type="text" id="newPasscode.link" class="form-control" />
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button id="btn-consent" type="button" data-dir="url2"
+                        class="ml-2 btn btn-success align-items-center d-flex">
+                        <span class="mr-2">OK</span>
+                        <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+                            <path fill="#FFF"
+                                d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+    var acsrf = '{{acsrf}}';
+    var exam = {{ exam|default ({}, true) | stringify | safe}};
+    var passcodes = {{ passcodes|default ([], true) | stringify | safe}};
+    var vApp = new Vue({
+        el: '#vApp',
+        delimiters: ["${", "}"],
+        mixins: [
+            VueMixins
+        ],
+        data: {
+            pending: false,
+            link: `/view/{{exam.id}}`,
+            url: `/editor/{{exam.id}}/share`,
+            exam: exam,
+            passcodes: passcodes,
+            newPasscode: {
+                passcode: '',
+                date: '',
+                expiry: ''
+            }
+        },
+        mounted: function () {
+            const me = this;
+            // jQuery('#customModal').modal('show')
+
+        },
+        computed: {
+            payload: function(){
+                return JSON.stringify({
+                    acsrf: acsrf,
+                    examId: exam.id
+                })
+            },
+            latestUrl: function () {
+                const me = this;
+                var passcode = me.passcodes.at(-1)
+                return '{{CONFIG.app.url}}/view-exam/' + (passcode?.code || '')
+            },
+        },
+        methods: {
+            showGenerate: function () {
+                var me = this;
+                me.pending = true;
+                me.$nextTick(function () {
+                    fetch(`/editor/generate-passcode`, {
+                        method: 'POST',
+                        body: me.payload,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    }).then(async function (response) {
+                        if (response.ok) {
+                            return response.json();
+                        }
+                        throw new Error(await response.text())
+                    }).then(function (responseJson) {
+                        window.location.reload()
+                    }).catch(async function (error) {
+                        console.error(error)
+                    }).then(function () {
+                        me.pending = false
+                    });
+                });
+            },
+            deletePasscode: function (passcodeId) {
+                var me = this;
+                me.pending = true;
+                me.$nextTick(function () {
+                    fetch(`/editor/delete-passcode`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            acsrf: acsrf,
+                            passcodeId: passcodeId,
+                        }),
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    }).then(async function (response) {
+                        if (response.ok) {
+                            return response.json();
+                        }
+                        throw new Error(await response.text())
+
+                    }).then(function (responseJson) {
+                        window.location.reload(true)
+                    }).catch(async function (error) {
+                        console.error(error)
+                    }).then(function () {
+                        me.pending = false
+                    });
+                });
+            },
+            onSubmit: function () {
+                const me = this;
+                me.$nextTick(function () {
+                    me.$refs.form.submit()
+                });
+            }
+        }
+    });
+
+    jQuery(document).ready(function ($) {
+        $('.copy-link').on('click', function () {
+            $(this).parent().siblings('input').select()
+            document.execCommand('copy');
+            alert('Link copied to clipboard.')
+        });
+    })
+</script>
+{% endblock %}

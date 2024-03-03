@@ -1,0 +1,99 @@
+{% extends "document.html" %}
+
+{% block body %}
+<div id="vApp" v-cloak :data-pending="pending" class="col-md-12">
+    {% include 'parts/toaster.html' %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <div class="d-flex align-items-start">
+            <h1 class="h3">Update Exam</h1>
+        </div>
+        {% include 'editor/button-group-top.html' %}
+    </div>
+    {% include 'parts/flash.html' %}
+    {% include 'editor/tabs.html' %}
+    <div class="tab-content p-3">
+        <form ref="form" v-on:submit.prevent="onSubmit" v-bind:action="url" method="POST" class="form-default">
+            <input type="hidden" name="acsrf" value="{{acsrf}}">
+            <div class="form-group">
+                <label for="title">Title</label>
+                <input v-model="exam.title" name="title" type="text" class="form-control" id="title" required>
+            </div>
+            <div class="text-center">
+                <button class="btn btn-primary">
+                    <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+                        <path fill="#FFF" d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z" />
+                    </svg>
+                    <span class="mr-2">Save</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+    var acsrf = '{{acsrf}}';
+    var exam = {{ exam|default ({}, true) | stringify | safe}};
+    var vApp = new Vue({
+        el: '#vApp',
+        delimiters: ["${", "}"],
+        data: {
+            pending: false,
+            ok: '',
+            error: '',
+            url: `/editor/{{exam.id}}/update`,
+            exam: exam
+        },
+        mounted: function(){
+            const me = this;
+        },
+        computed: {
+            payload: function(){
+                return JSON.stringify({
+                    acsrf: acsrf,
+                    exam: this.exam
+                })
+            }
+        },
+        methods: {
+            onSubmit: function(){
+                const me = this;
+                me.pending = true
+                me.$nextTick(function() {
+                    fetch(`/editor/${me.exam.id}/update-details`, {
+                        method: 'POST',
+                        body: me.payload,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    }).then(async function(response){
+                        if (response.ok) {
+                            return response.json();
+                        }
+                        throw new Error(await response.text())
+                        
+                    }).then(function(responseJson){
+                        me.ok = 'Exam updated.'
+                        me.$nextTick(function() {
+                            jQuery('#toast-ok').toast('show')
+                        })
+
+                    }).catch(async function(error){
+                        console.error(error)
+                        me.error = error.message
+                        me.$nextTick(function() {
+                            jQuery('#toast-error').toast('show')
+                        })
+
+                    }).then(function(){
+                        me.pending = false
+                    });
+                });
+
+            }
+        }
+    });
+</script>
+{% endblock %}
