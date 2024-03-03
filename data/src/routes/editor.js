@@ -72,12 +72,6 @@ router.post('/editor/create', middlewares.guardRoute(['create_exam']), middlewar
             questions: []
         });
 
-        // await req.app.locals.db.models.Passcode.create({
-        //     examId: exam.id,
-        //     code: passwordMan.genPasscode(),
-        //     expiredAt: moment(exam.date).add(1, 'days').toDate()
-        // });
-
         // return res.send(exam)
         flash.ok(req, 'exam', 'Exam created.')
         res.redirect(`/editor/${exam.id}/update`)
@@ -145,79 +139,6 @@ router.post('/editor/:examId/update-details', middlewares.guardRoute(['update_ex
 
         // return res.send(req.body)
         res.send(exam)
-    } catch (err) {
-        next(err);
-    }
-});
-
-router.get('/editor/:examId/share', middlewares.guardRoute(['update_exam']), middlewares.getExam(), async (req, res, next) => {
-    try {
-        let exam = res.exam
-        let passcodes = await req.app.locals.db.models.Passcode.findAll({
-            where: {
-                examId: exam.id
-            },
-            ...{
-                raw: true
-            }
-        })
-
-        passcodes = passcodes.map(o => {
-            o.expired = moment().isSameOrAfter(moment(o.expiredAt))
-            return o
-        })
-        let data = {
-            exam: exam,
-            passcodes: passcodes,
-        }
-
-        // return res.send(data)
-        res.render('editor/share.html', data);
-    } catch (err) {
-        next(err);
-    }
-});
-router.post('/editor/:examId/share', middlewares.guardRoute(['update_exam']), middlewares.getExam(), async (req, res, next) => {
-    try {
-        let exam = res.exam
-
-        let data = {
-            exam: exam,
-        }
-
-        await req.app.locals.db.models.Passcode.create({
-            examId: exam.id,
-            code: passwordMan.genPasscode(),
-            expiredAt: moment(exam.date).add(1, 'days').toDate()
-        });
-
-        // return res.send(data)
-        // res.render('editor/share.html', data);
-        res.redirect(`/editor/${exam.id}/share`)
-    } catch (err) {
-        next(err);
-    }
-});
-router.post('/editor/generate-passcode', middlewares.guardRoute(['update_exam']), middlewares.antiCsrfCheck, async (req, res, next) => {
-    try {
-        let passcode = await req.app.locals.db.models.Passcode.create({
-            examId: req.body.examId,
-            code: passwordMan.genPasscode(),
-            expiredAt: moment().add(1, 'days').toDate()
-        });
-        res.send(passcode)
-    } catch (err) {
-        next(err);
-    }
-});
-router.post('/editor/delete-passcode', middlewares.guardRoute(['update_exam']), middlewares.antiCsrfCheck, async (req, res, next) => {
-    try {
-        await req.app.locals.db.models.Passcode.destroy({
-            where: {
-                id: req.body.passcodeId
-            }
-        });
-        res.send({})
     } catch (err) {
         next(err);
     }
