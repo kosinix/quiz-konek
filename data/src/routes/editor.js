@@ -269,12 +269,12 @@ router.post('/editor/:examId/administer', middlewares.guardRoute(['update_exam']
 
         // // return res.send(exam)
         flash.ok(req, 'exam', 'New exam session started.')
-        res.redirect(`/editor/exam-session/${examSession.id}/update`)
+        res.redirect(`/editor/${exam.id}/session/${examSession.id}`)
     } catch (err) {
         next(err);
     }
 });
-router.get('/editor/exam-session/:examSessionId/update', middlewares.guardRoute(['update_exam']),  async (req, res, next) => {
+router.get('/editor/:examId/session/:examSessionId', middlewares.guardRoute(['update_exam']),  async (req, res, next) => {
     try {
         let examSession = await req.app.locals.db.models.ExamSession.findOne({
             where: {
