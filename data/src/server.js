@@ -83,6 +83,17 @@
     // Chat namespaces
     io.of("/quiz").use(middlewares.socket.expressToSocketMiddleware(session(app.locals.db.instance)));
     io.of("/quiz").use(middlewares.socket.authByPasscode);
+    io.of("/quiz").use((socketInstance, next) => {
+        let examSessionId = lodash.get(socketInstance, 'handshake.query.examSessionId')
+        let examineeId = lodash.get(socketInstance, 'handshake.auth.token')
+               
+        if(examineeId){
+            if(lodash.get(app, `locals.ioClients.room${examSessionId}.examinee${examineeId}`)){
+                return next(new Error("Duplicate"));
+            }
+        }
+        next()
+    });
     io.of("/quiz").on('connection', middlewares.socket.onQuizConnect(io, app))
 
     io.of("/proctor").use(middlewares.socket.expressToSocketMiddleware(session(app.locals.db.instance)));

@@ -195,9 +195,9 @@
 
             socket.on("connect_error", (err) => {
                 console.error(err.message);
+                alert('Error')
+                me.page = 1
             });
-
-
 
             socket.on('addExamineeList', (payload) => {
                 console.log('addExamineeList: ', payload);
@@ -217,11 +217,13 @@
 
             socket.on('start', () => {
                 me.page = 3
+
             });
 
             socket.on('end', () => {
                 me.page = 4
                 me.submit()
+                // document.exitFullscreen();
             });
         },
         methods: {
@@ -232,8 +234,8 @@
 
                 socket.auth.token = me.examineeId;
                 socket.disconnect().connect();
+                document.documentElement.requestFullscreen();
 
-                // document.documentElement.requestFullscreen();
                 me.page = 2
             },
             getAlphabet: function (choiceIndex) {
@@ -280,16 +282,16 @@
     });
 
 
-    function toggleFullScreen() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen();
-            socket.emit("fullScreen", "requestFullscreen");
-        } else if (document.exitFullscreen) {
-            document.exitFullscreen();
-            socket.emit("fullScreen", "exitFullscreen");
+    // function toggleFullScreen() {
+    //     if (!document.fullscreenElement) {
+    //         document.documentElement.requestFullscreen();
+    //         socket.emit("fullScreen", "requestFullscreen");
+    //     } else if (document.exitFullscreen) {
+    //         document.exitFullscreen();
+    //         socket.emit("fullScreen", "exitFullscreen");
 
-        }
-    }
+    //     }
+    // }
 
     // document.addEventListener('visibilitychange', function () {
     //     if (document.hidden) {
