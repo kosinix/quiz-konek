@@ -13,21 +13,28 @@
         {% include 'editor/tabs.html' %}
     </div>
     <div class="tab-content p-3">
-        <form ref="form" v-on:submit.prevent="onSubmit" action="/editor/{{exam.id}}/administer" method="POST" class="form-default">
+        <form ref="form" v-on:submit.prevent="onSubmit" action="/editor/{{exam.id}}/administer" method="POST"
+            class="form-default">
             <input type="hidden" name="acsrf" value="{{acsrf}}">
             <div class="form-group">
                 <label for="examineesIn">Input Examinees List:</label>
-                <textarea v-model="examineesIn" id="examineesIn" placeholder="Paste in the following format: Last Name, First Name, Middle Name, Suffix" class="form-control mb-2"></textarea>
-                <button :disabled="!examineesIn" @click="onExamineesIn" class="btn btn-sm btn-success" type="button">&raquo;&raquo;</button>
+                <textarea v-model="examineesIn" id="examineesIn"
+                    placeholder="Paste in the following format: Last Name, First Name, Middle Name, Suffix"
+                    class="form-control mb-2"></textarea>
+                <button :disabled="!examineesIn" @click="onExamineesIn" class="btn btn-sm btn-success"
+                    type="button">&raquo;&raquo;</button>
                 <hr>
                 <h6 class="h6">Examinees: <span class="text-danger">*</span> <em>${examSession.examinees.length}</em>
-                    <button v-if="examSession.examinees.length > 0" @click.prevent="toggle('flexRow', 'true', 'false')" type="button" class="btn btn-light btn-sm">Arrange</button>
+                    <button v-if="examSession.examinees.length > 0" @click.prevent="toggle('flexRow', 'true', 'false')"
+                        type="button" class="btn btn-light btn-sm">Arrange</button>
                 </h6>
                 <div class="examinees d-flex flex-wrap" v-bind:data-flex-row="flexRow">
                     <template v-if="examSession.examinees.length > 0">
-                        <div v-for="(examinee, examineeIndex) in examSession.examinees" class="d-flex justify-content-between">
+                        <div v-for="(examinee, examineeIndex) in examSession.examinees"
+                            class="d-flex justify-content-between">
                             <div class="name">${examinee.lastName}, ${examinee.firstName}</div>
-                            <div @click.prevent="deleteExaminee(examineeIndex)" class="delete btn btn-outline-danger">X</div>
+                            <div @click.prevent="deleteExaminee(examineeIndex)" class="delete btn btn-outline-danger">X
+                            </div>
                         </div>
                     </template>
                     <template v-else>
@@ -39,9 +46,11 @@
             <div class="form-group">
                 <label for="passcode">Passcode: <span class="text-danger">*</span></label>
                 <div class="input-group">
-                    <input type="text" readonly class="form-control" v-model="examSession.passcode" name="passcode" id="passcode">
+                    <input type="text" readonly class="form-control" v-model="examSession.passcode" name="passcode"
+                        id="passcode">
                     <div class="input-group-append">
-                        <button @click.prevent="copyText(`${examSession.passcode}`, `Passcode copied.`)" class="copy-link btn btn-outline-primary" type="button">Copy</button>
+                        <button @click.prevent="copyText(`${examSession.passcode}`, `Passcode copied.`)"
+                            class="copy-link btn btn-outline-primary" type="button">Copy</button>
                     </div>
                 </div>
             </div>
@@ -55,7 +64,8 @@
             </div>
             <div class="form-group">
                 <label for="description">Description</label>
-                <textarea v-model="examSession.description" name="description" id="description" placeholder="" class="form-control"></textarea>
+                <textarea v-model="examSession.description" name="description" id="description" placeholder=""
+                    class="form-control"></textarea>
             </div>
             <hr>
             <div class="form-group text-center">
@@ -71,7 +81,6 @@
     var acsrf = '{{acsrf}}';
     var exam = {{ exam|default ({}, true) | stringify | safe}};
     var examSession = {{ examSession|default ({}, true) | stringify | safe}};
-    var passcodes = {{ passcodes|default ([], true) | stringify | safe}};
     var vApp = new Vue({
         el: '#vApp',
         delimiters: ["${", "}"],
@@ -81,78 +90,75 @@
         data: {
             pending: false,
             link: `/view/{{exam.id}}`,
-            examineesIn: `Angeles, Charmel Jay E.
-Cagayan, Justin G.
-Chavez, Charles Ivans Hughes C.
-Chavez, Keisha Camille D.
-Denuyo, John Jeffrey G.
-Dimo-os, Mary Jane C.
-Dogomeo, Anna Lee Dizon
-Dumam-ag, Marjorie P.
-Galvez, Justine S.
-Gania, Aleja G.
-Gasangan, Daniel C.
-Jumilla, Eric John G.
-Lastimoso, Gretchen V.
-Librezana, Joshua E.
-Luyao, Geraldine B.
-Nanagad, Paolo M.
-Revicencio, Niña Marie A.
-Tanaleon, Kaela Chelsea T.
-Trance, Angel G.`,
+            examineesIn: '',
             ipAddresses: [],
             exam: exam,
-            passcodes: passcodes,
-            newPasscode: {
-                passcode: '',
-                date: '',
-                expiry: ''
-            },
             flexRow: 'true',
             examSession: examSession
         },
         mounted: function () {
             const me = this;
-            // jQuery('#customModal').modal('show')
+            me.examineesIn = `Angeles, Charmel Jay, E.
+Cagayan, Justin, G.
+Chavez, Charles Ivans Hughes, C.
+Chavez, Keisha Camille, D.
+Denuyo, John Jeffrey,G.
+Dimo-os, Mary Jane, C.
+Dogomeo, Anna Lee Dizon
+Dumam-ag, Marjorie, P.
+Galvez, Justine, S.
+Gania, Aleja, G.
+Gasangan, Daniel, C.
+Jumilla, Eric John, G.
+Lastimoso, Gretchen, V.
+Librezana, Joshua, E.
+Luyao, Geraldine, B.
+Nanagad, Paolo, M.
+Revicencio, Niña Marie, A.
+Tanaleon, Kaela Chelsea, T.
+Trance, Angel, G.`
             me.onExamineesIn()
-           
+
         },
         computed: {
-            
+
         },
         methods: {
-            stringify: function(payload){
+            stringify: function (payload) {
                 return JSON.stringify(payload)
             },
-            toggle: function(propPath, a, b){
+            toggle: function (propPath, a, b) {
                 var me = this;
                 me[propPath] = (me[propPath] === a) ? b : a
             },
-            copyText: function(text, message = 'Copied to clipboard.'){
+            copyText: function (text, message = 'Copied to clipboard.') {
                 navigator.clipboard.writeText(text).then(() => {
                     alert(message)
                 })
             },
-            onExamineesIn: function(){
+            onExamineesIn: function () {
                 var me = this;
                 let names = `${me.examineesIn}`.replace(/( )+/g, ' ').split("\n")
 
-                names = names.map( name => {
-                    let parts = name.split(',').map( p => `${p}`.trim())
+                names = names.map((name, i) => {
+                    let parts = name.split(',').map(p => `${p}`.trim())
                     let lastName = parts.at(0)
                     let firstName = parts.at(1)
                     let middleName = parts.at(2)
                     let suffix = parts.at(3)
 
                     return {
+                        id: 0,
                         lastName: lastName,
                         firstName: firstName,
                         middleName: middleName,
                         suffix: suffix,
+                        status: 0,
                     }
                 })
                 // console.log(names)
-                names.forEach( name => {
+                names.forEach(name => {
+                    name.id = me.examSession.examinees.length + 1
                     me.examSession.examinees.push(name)
                 })
                 me.examineesIn = ''
@@ -225,7 +231,7 @@ Trance, Angel G.`,
     });
 
     jQuery(document).ready(function ($) {
-        
+
     })
 </script>
 {% endblock %}

@@ -19,7 +19,21 @@ router.get('/view/:examSessionId', middlewares.getExamSession(), async (req, res
     try {
         let examSession = res.examSession
         let exam = res.exam
-        exam.time = moment(exam.time, 'hh:mm').format('hh:mm A')
+        exam.questions = exam.questions.map(q=>{
+            let choices = q.choices.map(c=>{
+                return {
+                    id: c.id,
+                    text: c.text,
+                    selected: false,
+                    isCorrect: c.isCorrect
+                }
+            })
+            return {
+                id: q.id,
+                text: q.text,
+                choices: choices,
+            }
+        })
         let data = {
             SOCKET_URL: `//${req.headers['host']}`,
             examSession: examSession,
@@ -31,6 +45,14 @@ router.get('/view/:examSessionId', middlewares.getExamSession(), async (req, res
         next(err);
     }
 });
-
+router.post('/view/:examSessionId', middlewares.getExamSession(), async (req, res, next) => {
+    try {
+        let data = req.body
+        console.log(data)
+        res.send(data)
+    } catch (err) {
+        next(err);
+    }
+})
 
 module.exports = router;

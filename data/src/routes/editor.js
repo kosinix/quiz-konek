@@ -86,6 +86,7 @@ router.get('/editor/:examId/update', middlewares.guardRoute(['update_exam']), mi
 
         let data = {
             flash: flash.get(req, 'exam'),
+            SOCKET_URL: `//${req.headers['host']}`,
             exam: exam,
         }
         // return res.send(data)
@@ -332,6 +333,7 @@ router.get('/editor/network', middlewares.guardRoute(['update_exam']), async (re
         next(err);
     }
 });
+
 
 
 

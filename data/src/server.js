@@ -74,43 +74,20 @@
 
     //// Socket IO middlewares and handlers
     // Wrapper function
-    const expressToSocketMiddleware = (middleware) => {
-        return (socket, next) => {
-            return middleware(socket.request, {}, next)
-        }
-    }
-    const authSocket = (socket, next) => {
-        let authUserId = lodash.get(socket, 'request.session.authPasscodeId');
-        if (!authUserId) {
-            next(new Error("Unauthorized"));
-        } else {
-            next()
-        }
-    }
-    app.locals.ioClients = []
+    
+    
+    app.locals.ioClients = {}
 
-    const onSocketConnect = (socket) => {
-        // Put the client socket into a room
-        let room = lodash.get(socket, 'handshake.query.room')
-        if (room) {
-            console.log(`socket ${socket.id} to room ${room}`)
-            app.locals.ioClients.push(socket.id)
-            socket.join(room)
-        }
-
-        socket.on("fullScreen", (arg) => {
-            console.log('fullScreen', arg);
-        });
-
-        socket.on("studentReady", (arg) => {
-            console.log('studentReady', arg);
-        });
-    }
+    
 
     // Chat namespaces
-    io.of("/quiz").use(expressToSocketMiddleware(session(app.locals.db.instance)));
-    io.of("/quiz").use(authSocket);
-    io.of("/quiz").on('connection', onSocketConnect)
+    io.of("/quiz").use(middlewares.socket.expressToSocketMiddleware(session(app.locals.db.instance)));
+    io.of("/quiz").use(middlewares.socket.authByPasscode);
+    io.of("/quiz").on('connection', middlewares.socket.onQuizConnect(io, app))
+
+    io.of("/proctor").use(middlewares.socket.expressToSocketMiddleware(session(app.locals.db.instance)));
+    io.of("/proctor").use(middlewares.socket.authByPassword);
+    io.of("/proctor").on('connection', middlewares.socket.onProctorConnect(io, app))
 
     // Sockets IO
     app.locals.io = io

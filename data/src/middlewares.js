@@ -280,7 +280,7 @@ module.exports = {
         req.app.locals.ENV = ENV
         req.app.locals.VERSION = `2023.11`
         req.app.locals.SERVER_URL = CONFIG.app.url,
-        next()
+            next()
     },
     /**
      * See: https://expressjs.com/en/api.html#res.locals
@@ -340,4 +340,106 @@ module.exports = {
             next(error);
         }
     },
+    socket: {
+        expressToSocketMiddleware: (middleware) => {
+            return (socket, next) => {
+                return middleware(socket.request, {}, next)
+            }
+        },
+        authByPasscode: (socket, next) => {
+            let authUserId = lodash.get(socket, 'request.session.authPasscodeId');
+            if (!authUserId) {
+                next(new Error("Unauthorized"));
+            } else {
+                next()
+            }
+        },
+        authByPassword: (socket, next) => {
+            let authUserId = lodash.get(socket, 'request.session.authUserId');
+            if (!authUserId) {
+                next(new Error("Unauthorized"));
+            } else {
+                next()
+            }
+        },
+        onQuizConnect: (io, app) => {
+            return (socketInstance) => {
+
+                let room = lodash.get(socketInstance, 'handshake.query.room')
+                let examSessionId = lodash.get(socketInstance, 'handshake.query.examSessionId')
+                let examineeId = lodash.get(socketInstance, 'handshake.auth.token')
+                // console.log('CONNECT', 'examSessionId', examSessionId, socketInstance.id, examineeId, 'count', io.of("/quiz").sockets.size)
+
+                if (room) {
+                    socketInstance.join(room)
+                }
+
+                if(examineeId){
+                    // console.log('CONNECT', examineeId)
+                    lodash.set(app, `locals.ioClients.room${examSessionId}.examinee${examineeId}`, 1)
+                    io.of("/quiz").to(room).emit("addExamineeList", examineeId);
+                    io.of("/proctor").to(room).emit("addExamineeList", examineeId);
+                }
+
+
+                socketInstance.on("disconnect", (reason) => {
+                    // console.log('DISCO', 'examSessionId', examSessionId, socketInstance.id, examineeId)
+                    if(examineeId){
+                        console.log('DISCO', examineeId)
+                        lodash.set(app, `locals.ioClients.room${examSessionId}.examinee${examineeId}`, 0)
+                        io.of("/quiz").to(room).emit("reduceExamineeList", examineeId);
+                        io.of("/proctor").to(room).emit("reduceExamineeList", examineeId);
+                    }
+                })
+
+                // socketInstance.on("proctor administer", (arg) => {
+                //     console.log('proctor administer', arg);
+                // })
+
+                // socketInstance.on("fullScreen", (arg) => {
+                //     console.log('fullScreen', arg);
+                // })
+
+                socketInstance.on("student ready", (arg) => {
+                    console.log('student ready', arg, socketInstance.id);
+                    // app.locals.ioClients.push(room)
+                    io.of("/quiz").to(room).emit("hello", arg.firstname);
+                })
+            }
+        },
+        onProctorConnect: (io, app) => {
+            return (socketInstance) => {
+                let room = lodash.get(socketInstance, 'handshake.query.room')
+                let examSessionId = lodash.get(socketInstance, 'handshake.query.examSessionId')
+                let examineeId = lodash.get(socketInstance, 'handshake.auth.token')
+                console.log('proctor CONNECT', 'examSessionId', examSessionId, socketInstance.id, examineeId)
+
+                console.log(app.locals.ioClients)
+                if (room) {
+                    // console.log(`socketInstance ${socketInstance.id} to room ${room}`)
+                    socketInstance.join(room)
+                }
+
+                socketInstance.on("disconnect", (reason) => {
+                    // console.log('disconnect', reason)
+                    console.log('proctor DISCO', 'examSessionId', examSessionId, socketInstance.id, examineeId)
+                })
+
+                socketInstance.on("proctor administer", (arg) => {
+                    // console.log('proctor administer', arg);
+                })
+
+                socketInstance.on("fullScreen", (arg) => {
+                    console.log('fullScreen', arg);
+                })
+
+                socketInstance.on("go", (arg) => {
+                    io.of("/quiz").to(room).emit("start");
+                })
+                socketInstance.on("end", (arg) => {
+                    io.of("/quiz").to(room).emit("end");
+                })
+            }
+        }
+    }
 }

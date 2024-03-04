@@ -5,7 +5,7 @@
     <div
         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <div class="d-flex align-items-start">
-            <h1 class="h3">Update Exam</h1>
+            <h1 class="h3">Presiding Exam</h1>
         </div>
         {% include 'editor/button-group-top.html' %}
     </div>
@@ -17,7 +17,7 @@
             <input type="hidden" name="acsrf" value="{{acsrf}}">
             
             <div class="form-group">
-                <label for="passcode">Passcode: <span class="text-danger">*</span></label>
+                <label for="passcode">Links:</label>
                 <div v-for="conn in connections" class="input-group">
                     <input type="text" readonly class="form-control" :value="`${conn}/get-exam/${examSession.passcode}`">
                     <div class="input-group-append">
@@ -26,20 +26,17 @@
                 </div>
             </div>
             <div class="form-group">
-                <label for="date">Date &amp; Time: <span class="text-danger">*</span></label>
-                <input type="datetime-local" v-model="examSession.date" name="date" id="date" class="form-control">
+                <label for="examinees">Members:</label>
+                <ol>
+                    <li v-for="examinee in examSession.examinees">
+                        <div :class="examineeCssClass(examinee.id)" >${examinee.lastName}, ${examinee.firstName} ${examinee.status}</div>
+                    </li>
+                </ol>
+
             </div>
             <div class="form-group">
-                <label for="venue">Venue</label>
-                <input type="text" v-model="examSession.venue" name="venue" id="venue" class="form-control">
-            </div>
-            <div class="form-group">
-                <label for="description">Description</label>
-                <textarea v-model="examSession.description" name="description" id="description" placeholder="" class="form-control"></textarea>
-            </div>
-            <hr>
-            <div class="form-group text-center">
-                <button class="btn btn-primary btn-lg">Administer</button>
+                <button @click="onGo" class="btn btn-primary" type="button">Start Exam</button>
+                <button @click="onEnd" class="btn btn-primary" type="button">End Exam</button>
             </div>
         </form>
     </div>
@@ -47,7 +44,14 @@
 {% endblock %}
 {% block scripts %}
 {{ super() }}
+<script src="{{app.url}}/js/socket.io.min.js"></script>
 <script>
+    let socket = io("{{SOCKET_URL}}/proctor", {
+        query: {
+            room: 'room-{{examSession.id}}',
+            examSessionId: '{{examSession.id}}',
+        }
+    });
     var acsrf = '{{acsrf}}';
     var exam = {{ exam|default ({}, true) | stringify | safe}};
     var examSession = {{ examSession|default ({}, true) | stringify | safe}};
@@ -65,12 +69,52 @@
         },
         mounted: function () {
             const me = this;
+
+            socket.on("connect", () => {
+                me.connected = true
+                console.log('connected1 ', socket.id); // x8WIv7-mJelg7on_ALbx
+
+                socket.emit("proctor administer", {status: 1})
+            });
+
+            socket.on("disconnect", () => {
+                me.connected = false
+                console.log('disconnected 1', socket.id); // undefined
+            });
+
+
+            socket.on('addExamineeList', (payload) => {
+                console.log('addExamineeList: ', payload);
+                let index = me.examSession.examinees.findIndex( o => {
+                    return o.id == payload
+                })
+                me.examSession.examinees[index].status = 1
+            });
+
+            socket.on('reduceExamineeList', (payload) => {
+                console.log('reduceExamineeList: ', payload);
+                let index = me.examSession.examinees.findIndex( o => {
+                    return o.id == payload
+                })
+                me.examSession.examinees[index].status = 0
+            });
            
         },
         computed: {
             
         },
         methods: {
+            examineeCssClass: function(id){
+                var me = this
+                let index = me.examSession.examinees.findIndex( o => {
+                    return o.id == id
+                })
+                if(me.examSession.examinees[index].status === 1){
+                    return 'btn btn-outline-success'
+                } else {
+                    return 'btn btn-outline-dark'
+                }
+            },
             stringify: function(payload){
                 return JSON.stringify(payload)
             },
@@ -111,65 +155,11 @@
                 var me = this;
                 me.$delete(me.examSession.examinees, examineeIndex)
             },
-            showGenerate: function () {
-                var me = this;
-                me.pending = true;
-                me.$nextTick(function () {
-                    fetch(`/editor/generate-passcode`, {
-                        method: 'POST',
-                        body: me.payload,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    }).then(async function (response) {
-                        if (response.ok) {
-                            return response.json();
-                        }
-                        throw new Error(await response.text())
-                    }).then(function (responseJson) {
-                        window.location.reload()
-                    }).catch(async function (error) {
-                        console.error(error)
-                    }).then(function () {
-                        me.pending = false
-                    });
-                });
+            onGo: function(){
+                socket.emit('go')
             },
-            deletePasscode: function (passcodeId) {
-                var me = this;
-                me.pending = true;
-                me.$nextTick(function () {
-                    fetch(`/editor/delete-passcode`, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            acsrf: acsrf,
-                            passcodeId: passcodeId,
-                        }),
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    }).then(async function (response) {
-                        if (response.ok) {
-                            return response.json();
-                        }
-                        throw new Error(await response.text())
-
-                    }).then(function (responseJson) {
-                        window.location.reload(true)
-                    }).catch(async function (error) {
-                        console.error(error)
-                    }).then(function () {
-                        me.pending = false
-                    });
-                });
-            },
-            onSubmit: function () {
-                const me = this;
-                me.$nextTick(function () {
-                    me.$refs.form.submit()
-                });
+            onEnd: function () {
+                socket.emit('end')
             }
         }
     });
