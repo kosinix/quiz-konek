@@ -72,25 +72,25 @@
     //// Sane titles
     app.use(middlewares.saneTitles);
 
-    //// Socket IO middlewares and handlers
-    // Wrapper function
-    
-    
+    //// Socket IO 
+    // Middlewares and handlers
     app.locals.ioClients = {}
-
-    
 
     // Chat namespaces
     io.of("/quiz").use(middlewares.socket.expressToSocketMiddleware(session(app.locals.db.instance)));
     io.of("/quiz").use(middlewares.socket.authByPasscode);
-    io.of("/quiz").use((socketInstance, next) => {
+    io.of("/quiz").use(async (socketInstance, next) => {
+
         let examSessionId = lodash.get(socketInstance, 'handshake.query.examSessionId')
         let examineeId = lodash.get(socketInstance, 'handshake.auth.token')
-               
-        if(examineeId){
-            if(lodash.get(app, `locals.ioClients.room${examSessionId}.examinee${examineeId}`)){
-                return next(new Error("Duplicate"));
+
+        if (examineeId) {
+            let examinees = lodash.get(app, `locals.ioClients.room${examSessionId}`, [])
+            console.log('examinees', examinees)
+            if (examinees.indexOf(examineeId) > -1) {
+                return next(new Error("Duplicate view."));
             }
+
         }
         next()
     });

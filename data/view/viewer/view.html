@@ -102,9 +102,9 @@
                             </div>
                             <ol class="choices">
                                 <template v-for="(choice, choiceIndex) in question.choices">
-                                    <li @click="selectChoice(questionIndex, choiceIndex)"
+                                    <li
                                         :data-selected="choice.selected">
-                                        <span class="letter">${getAlphabet(choiceIndex)}.</span>
+                                        <span @click="selectChoice(questionIndex, choiceIndex)" class="letter">${getAlphabet(choiceIndex)}.</span>
                                         <span>${choice.text}</span>
                                     </li>
                                 </template>
@@ -195,8 +195,12 @@
 
             socket.on("connect_error", (err) => {
                 console.error(err.message);
-                alert('Error')
                 me.page = 1
+                me.$nextTick(function(){
+                    setTimeout(function(){
+                        alert(err)
+                    }, 10)
+                })
             });
 
             socket.on('addExamineeList', (payload) => {
@@ -234,7 +238,7 @@
 
                 socket.auth.token = me.examineeId;
                 socket.disconnect().connect();
-                document.documentElement.requestFullscreen();
+                // document.documentElement.requestFullscreen();
 
                 me.page = 2
             },

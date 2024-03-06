@@ -363,7 +363,9 @@ module.exports = {
             }
         },
         onQuizConnect: (io, app) => {
-            return (socketInstance) => {
+            return async (socketInstance) => {
+        //         const socketInstances = await io.of('/quiz').fetchSockets()
+        // console.log(socketInstances.length)
 
                 let room = lodash.get(socketInstance, 'handshake.query.room')
                 let examSessionId = lodash.get(socketInstance, 'handshake.query.examSessionId')
@@ -374,9 +376,12 @@ module.exports = {
                     socketInstance.join(room)
                 }
 
-                if(examineeId){
+                if (examineeId) {
                     // console.log('CONNECT', examineeId)
-                    lodash.set(app, `locals.ioClients.room${examSessionId}.examinee${examineeId}`, 1)
+                    let examinees = lodash.get(app, `locals.ioClients.room${examSessionId}`, [])
+                    examinees.push(examineeId)
+                    lodash.set(app, `locals.ioClients.room${examSessionId}`, examinees)
+                  
                     io.of("/quiz").to(room).emit("addExamineeList", examineeId);
                     io.of("/proctor").to(room).emit("addExamineeList", examineeId);
                 }
@@ -384,9 +389,14 @@ module.exports = {
 
                 socketInstance.on("disconnect", (reason) => {
                     // console.log('DISCO', 'examSessionId', examSessionId, socketInstance.id, examineeId)
-                    if(examineeId){
+                    if (examineeId) {
                         console.log('DISCO', examineeId)
-                        lodash.set(app, `locals.ioClients.room${examSessionId}.examinee${examineeId}`, 0)
+                        let examinees = lodash.get(app, `locals.ioClients.room${examSessionId}`, [])
+                        let index = examinees.indexOf(examineeId)
+                        if (index > -1) {
+                            examinees.splice(index,1)
+                            lodash.set(app, `locals.ioClients.room${examSessionId}`, examinees)
+                        }
                         io.of("/quiz").to(room).emit("reduceExamineeList", examineeId);
                         io.of("/proctor").to(room).emit("reduceExamineeList", examineeId);
                     }
@@ -414,7 +424,7 @@ module.exports = {
                 let examineeId = lodash.get(socketInstance, 'handshake.auth.token')
                 console.log('proctor CONNECT', 'examSessionId', examSessionId, socketInstance.id, examineeId)
 
-                console.log(app.locals.ioClients)
+                // console.log(app.locals.ioClients)
                 if (room) {
                     // console.log(`socketInstance ${socketInstance.id} to room ${room}`)
                     socketInstance.join(room)

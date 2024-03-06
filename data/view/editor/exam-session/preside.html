@@ -56,6 +56,7 @@
     var exam = {{ exam|default ({}, true) | stringify | safe}};
     var examSession = {{ examSession|default ({}, true) | stringify | safe}};
     var connections = {{ connections|default ([], true) | stringify | safe}};
+
     var vApp = new Vue({
         el: '#vApp',
         delimiters: ["${", "}"],
@@ -65,7 +66,7 @@
         data: {
             pending: false,
             connections: connections,
-            examSession: examSession
+            examSession: examSession,
         },
         mounted: function () {
             const me = this;
@@ -109,52 +110,23 @@
                 let index = me.examSession.examinees.findIndex( o => {
                     return o.id == id
                 })
-                if(me.examSession.examinees[index].status === 1){
-                    return 'btn btn-outline-success'
-                } else {
-                    return 'btn btn-outline-dark'
+                if(index > -1){
+                    if(me.examSession.examinees[index].status === 1){
+                        return 'btn btn-outline-success'
+                    }
                 }
+                return 'btn btn-outline-dark'
             },
             stringify: function(payload){
                 return JSON.stringify(payload)
-            },
-            toggle: function(propPath, a, b){
-                var me = this;
-                me[propPath] = (me[propPath] === a) ? b : a
             },
             copyText: function(text, message = 'Copied to clipboard.'){
                 navigator.clipboard.writeText(text).then(() => {
                     alert(message)
                 })
             },
-            onExamineesIn: function(){
-                var me = this;
-                let names = `${me.examineesIn}`.replace(/( )+/g, ' ').split("\n")
-
-                names = names.map( name => {
-                    let parts = name.split(',').map( p => `${p}`.trim())
-                    let lastName = parts.at(0)
-                    let firstName = parts.at(1)
-                    let middleName = parts.at(2)
-                    let suffix = parts.at(3)
-
-                    return {
-                        lastName: lastName,
-                        firstName: firstName,
-                        middleName: middleName,
-                        suffix: suffix,
-                    }
-                })
-                // console.log(names)
-                names.forEach( name => {
-                    me.examSession.examinees.push(name)
-                })
-                me.examineesIn = ''
-            },
-            deleteExaminee: function (examineeIndex) {
-                var me = this;
-                me.$delete(me.examSession.examinees, examineeIndex)
-            },
+            
+            
             onGo: function(){
                 socket.emit('go')
             },

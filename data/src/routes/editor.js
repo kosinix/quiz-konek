@@ -186,7 +186,7 @@ router.post('/editor/:examId/delete', middlewares.guardRoute(['delete_exam']), m
 router.get('/editor/:examId/administer', middlewares.guardRoute(['update_exam']), middlewares.getExam(), async (req, res, next) => {
     try {
         let exam = res.exam
-       
+
         let examSession = {
             examinees: [],
             description: '',
@@ -248,10 +248,10 @@ router.post('/editor/:examId/administer', middlewares.guardRoute(['update_exam']
 
         let data = req.body
 
-        if(data.examinees){
+        if (data.examinees) {
             try {
                 data.examinees = JSON.parse(data.examinees)
-            } catch(e) {
+            } catch (e) {
                 data.examinees = []
             }
         }
@@ -274,14 +274,14 @@ router.post('/editor/:examId/administer', middlewares.guardRoute(['update_exam']
         next(err);
     }
 });
-router.get('/editor/:examId/session/:examSessionId', middlewares.guardRoute(['update_exam']),  async (req, res, next) => {
+router.get('/editor/:examId/session/:examSessionId', middlewares.guardRoute(['update_exam']), async (req, res, next) => {
     try {
         let examSession = await req.app.locals.db.models.ExamSession.findOne({
             where: {
                 id: req.params.examSessionId,
             },
         })
-        if(!examSession){
+        if (!examSession) {
             throw new Error('aa')
         }
         let exam = await req.app.locals.db.models.Exam.findOne({
@@ -289,13 +289,23 @@ router.get('/editor/:examId/session/:examSessionId', middlewares.guardRoute(['up
                 id: examSession.examId,
             },
         })
-        if(!examSession){
+        if (!examSession) {
             throw new Error('bb')
         }
         const wifiName = require('wifi-name')
+        let examinees = lodash.get(req, `app.locals.ioClients.room${examSession.id}`, [])
+        examSession.examinees = examSession.examinees.map(e => {
+            // e.status = 0
+            if(examinees.includes(e.id)){
+                e.status = 1
+            }
+            return e
+        })
+        // console.log(lodash.get(req, `app.locals.ioClients.room${examSession.passcode}`))
         let data = {
             exam: exam,
             examSession: examSession,
+            examinees: examSession.examinees,
             wifiName: wifiName.sync(),
             connections: network.connections(CONFIG.app.port),
         }
@@ -326,7 +336,7 @@ router.get('/editor/network', middlewares.guardRoute(['update_exam']), async (re
         })
         console.log(data.pop())
 
-       
+
         // console.log(networkInterfaces)
         res.send(ip4Addresses)
     } catch (err) {

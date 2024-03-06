@@ -846,7 +846,6 @@ ol.questions>li>ol {
 ol.questions>li>ol>li {
     display: flex;
     margin-bottom: 5px;
-    cursor: pointer;
     border: 1px solid transparent;
 }
 
@@ -855,7 +854,7 @@ ol.questions>li>ol>li>span:first-child {
 }
 
 ol.questions>li>ol>li>.letter {
-
+    cursor: pointer;
     border-radius: 100%;
     min-width: 25px;
     text-align: center;
