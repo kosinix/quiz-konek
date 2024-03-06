@@ -69,7 +69,8 @@ router.post('/editor/create', middlewares.guardRoute(['create_exam']), middlewar
 
         let exam = await req.app.locals.db.models.Exam.create({
             title: data.title,
-            questions: []
+            questions: [],
+            results: []
         });
 
         // return res.send(exam)

@@ -381,7 +381,6 @@ module.exports = {
                     let examinees = lodash.get(app, `locals.ioClients.room${examSessionId}`, [])
                     examinees.push(examineeId)
                     lodash.set(app, `locals.ioClients.room${examSessionId}`, examinees)
-                  
                     io.of("/quiz").to(room).emit("addExamineeList", examineeId);
                     io.of("/proctor").to(room).emit("addExamineeList", examineeId);
                 }

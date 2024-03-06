@@ -68,6 +68,7 @@
                                         <ul>
                                             <li>Multiple choice</li>
                                             <li>No tab switching</li>
+                                            <li>No screenshot</li>
                                         </ul>
                                     </div>
                                 </div>
@@ -83,17 +84,18 @@
     </template>
     <template v-if="page==3">
         <header>
-            <nav class="container">
-                <div class="row">
+            <div class="container">
+                <nav class="row">
                     <div class="col-12 pt-3 pb-3">
-                        <h1 class="h1 text-center">HTML Quiz 1</h1>
+                        <h1 class="h6 mb-1">Exam: ${exam.title}</h1>
+                        <h2 class="h6 mb-0">Name: <strong>${name}</strong></h2>
                     </div>
-                </div>
-            </nav>
+                </nav>
+            </div>
         </header>
         <div class="container">
             <div class="row">
-                <div class="col-12 pt-5 pb-5">
+                <div class="col-12 pt-4 pb-4">
                     <ol class="questions">
                         <li v-for="(question, questionIndex) in exam.questions">
                             <div class="body">
@@ -111,14 +113,14 @@
                             </ol>
                         </li>
                     </ol>
-                    <p>${answers}</p>
+                    <!-- <pre>${results}</pre>
                     <div>
                         <ol>
-                            <li v-for="question in answers.questions">
-                                ${question.question} - ${question.answer}
+                            <li v-for="question in results.questions">
+                                ${question.question} <u>${question.answer}</u>
                             </li>
                         </ol>
-                    </div>
+                    </div> -->
                 </div>
             </div>
         </div>
@@ -155,23 +157,33 @@
             exam: exam,
         },
         computed: {
-            answers: function () {
-                var me = this;
-                let questions = me.exam.questions.map(q => {
-                    let answer = q.choices.map((c, i) => {
-                        return c.selected ? me.getAlphabet(i) : ''
-                    }).filter(a => a)
-                    return {
-                        question: q.text,
-                        answer: answer
-                    }
-                })
-                let index = me.examSession.examinees.findIndex(o => {
+            name: function () {
+                const me = this;
+                
+                let examinee = me.examSession.examinees.find(o => {
                     return o.id == me.examineeId
                 })
+                if(examinee){
+                    return `${examinee.lastName}, ${examinee.firstName}`
+                }
 
+                return ''
+            },
+            results: function () {
+                var me = this;
+                let questions = me.exam.questions.map(q => {
+                    let answers = q.choices.map(c => c.selected )
+                    return {
+                        id: q.id,
+                        question: q.text,
+                        answers: answers
+                    }
+                })
+                let examinee = me.examSession.examinees.find(o => {
+                    return o.id == me.examineeId
+                })
                 return {
-                    examineeName: me.examSession.examinees[index].lastName,
+                    examinee: examinee,
                     questions: questions
                 }
             },
@@ -264,7 +276,7 @@
 
                 fetch(`/view/${examSession.id}`, {
                     method: 'POST',
-                    body: JSON.stringify(me.answers),
+                    body: JSON.stringify(me.results),
                     headers: {
                         'Content-Type': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
