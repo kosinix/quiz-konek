@@ -770,28 +770,16 @@ button.btn-eye[data-state="text"] svg:nth-child(2) {
 }
 
 .grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
     margin: 0 auto;
-}
-
-.grid-item {
-    width: 200px;
-}
-
-.grid-item--width2 {
-    width: 400px;
-}
-
-.grid-item--width3 {
-    width: 600px;
-}
-
-.grid-item--height2 {
-    height: 200px;
+    justify-content: center;
 }
 
 .grid-item img {
     max-width: 100%;
-    height: auto;
+    height: 133px;
 }
 
 header {
@@ -894,6 +882,8 @@ ol.questions>li>ol>li[data-selected="true"]>.letter {
     padding: 5px;
     box-shadow: none;
 }
+
+
 
 /* Breakpoints */
 /* ≥1200px Extra large */

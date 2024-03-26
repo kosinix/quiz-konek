@@ -21,17 +21,14 @@
                     <div class="grid-item">
                         <img src="/images/grid1.jpg" alt="">
                     </div>
-                    <div class="grid-item grid-item--width2">
+                    <div class="grid-item">
                         <img src="/images/grid2.jpg" alt="">
                     </div>
                     <div class="grid-item">
                         <img src="/images/grid3.jpg" alt="">
                     </div>
-                    <div class="grid-item grid-item--height2">
-                        <img src="/images/grid4.jpg" alt="">
-                    </div>
                     <div class="grid-item">
-                        <img src="/images/grid5.jpg" alt="">
+                        <img src="/images/grid4.jpg" alt="">
                     </div>
                     <div class="grid-item">
                         <img src="/images/grid5.jpg" alt="">
@@ -39,7 +36,7 @@
                     <div class="grid-item">
                         <img src="/images/grid6.jpg" alt="">
                     </div>
-                    <div class="grid-item grid-item--width2">
+                    <div class="grid-item">
                         <img src="/images/grid7.jpg" alt="">
                     </div>
                     <div class="grid-item">
@@ -60,14 +57,4 @@
 {% endblock %}
 {% block scripts %}
 {{ super() }}
-<script src="{{app.url}}/js/masonry.pkgd.min.js"></script>
-<script>
-var msnry = new Masonry( '.grid', {
-  // options
-  itemSelector: '.grid-item',
-  columnWidth: 200,
- 
-  fitWidth : true
-});
-</script>
 {% endblock %}
