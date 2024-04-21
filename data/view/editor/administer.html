@@ -138,7 +138,8 @@ Trance, Angel, G.`
             },
             onExamineesIn: function () {
                 var me = this;
-                let names = `${me.examineesIn}`.replace(/( )+/g, ' ').split("\n")
+                // Remove non alpha except ,. space and \n. Then remove more than 1 space
+                let names = `${me.examineesIn}`.replace(/[^\w,.\n ]+/g, ' ').replace(/( )+/g, ' ').trim().split("\n")
 
                 names = names.map((name, i) => {
                     let parts = name.split(',').map(p => `${p}`.trim())
@@ -159,7 +160,9 @@ Trance, Angel, G.`
                 // console.log(names)
                 names.forEach(name => {
                     name.id = me.examSession.examinees.length + 1
-                    me.examSession.examinees.push(name)
+                    // if(!names.find(n => n.lastName === name.lastName && n.firstName === name.firstName)){
+                        me.examSession.examinees.push(name)
+                    // }
                 })
                 me.examineesIn = ''
             },

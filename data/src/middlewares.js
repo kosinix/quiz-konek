@@ -3,10 +3,35 @@
 
 //// External modules
 const access = require('acrb')
-const lodash = require('lodash')
+const lodash = require('lodash');
+const examSession = require('./models/exam-session');
 
 //// Modules
 // const uploader = require('./uploader')
+const setExamineeStatus = async (app, examSessionId, examineeId, status) => {
+    let examSession = await app.locals.db.models.ExamSession.findByPk(examSessionId)
+    if (examSession) {
+        // console.log('examinees', examSession.examinees.map(e => `${e.lastName}: ${e.status}`))
+        let examinees = examSession.examinees.map(e => {
+            if (e.id === examineeId) {
+                e.status = status
+            }
+            return e
+        })
+        await app.locals.db.models.ExamSession.update(
+            {
+                examinees: examinees
+            },
+            {
+                where: {
+                    id: examSession.id
+                }
+            }
+        )
+        return examinees
+    }
+
+}
 
 module.exports = {
     rateLimit: async (req, res, next) => {
@@ -364,40 +389,31 @@ module.exports = {
         },
         onQuizConnect: (io, app) => {
             return async (socketInstance) => {
-        //         const socketInstances = await io.of('/quiz').fetchSockets()
-        // console.log(socketInstances.length)
 
                 let room = lodash.get(socketInstance, 'handshake.query.room')
                 let examSessionId = lodash.get(socketInstance, 'handshake.query.examSessionId')
                 let examineeId = lodash.get(socketInstance, 'handshake.auth.token')
-                // console.log('CONNECT', 'examSessionId', examSessionId, socketInstance.id, examineeId, 'count', io.of("/quiz").sockets.size)
+                console.log('CLIENT HI', 'examSessionId', examSessionId, 'examineeId', examineeId)
+
+                if (examineeId && examSessionId) {
+                    // This means that client has selected a name
+                    setExamineeStatus(app, examSessionId, examineeId, 1).then(examinees => {
+                        io.of("/quiz").to(room).emit("updateExamineeList", examinees);
+                        io.of("/proctor").to(room).emit("updateExamineeList", examinees);
+                    }).catch(e => console.error(e))
+                }
 
                 if (room) {
                     socketInstance.join(room)
                 }
 
-                if (examineeId) {
-                    // console.log('CONNECT', examineeId)
-                    let examinees = lodash.get(app, `locals.ioClients.room${examSessionId}`, [])
-                    examinees.push(examineeId)
-                    lodash.set(app, `locals.ioClients.room${examSessionId}`, examinees)
-                    io.of("/quiz").to(room).emit("addExamineeList", examineeId);
-                    io.of("/proctor").to(room).emit("addExamineeList", examineeId);
-                }
-
-
                 socketInstance.on("disconnect", (reason) => {
-                    // console.log('DISCO', 'examSessionId', examSessionId, socketInstance.id, examineeId)
-                    if (examineeId) {
-                        console.log('DISCO', examineeId)
-                        let examinees = lodash.get(app, `locals.ioClients.room${examSessionId}`, [])
-                        let index = examinees.indexOf(examineeId)
-                        if (index > -1) {
-                            examinees.splice(index,1)
-                            lodash.set(app, `locals.ioClients.room${examSessionId}`, examinees)
-                        }
-                        io.of("/quiz").to(room).emit("reduceExamineeList", examineeId);
-                        io.of("/proctor").to(room).emit("reduceExamineeList", examineeId);
+                    console.log('CLIENT bye', 'examSessionId', examSessionId, 'examineeId', examineeId)
+                    if (examineeId && examSessionId) {
+                        setExamineeStatus(app, examSessionId, examineeId, 0).then(examinees => {
+                            io.of("/quiz").to(room).emit("updateExamineeList", examinees);
+                            io.of("/proctor").to(room).emit("updateExamineeList", examinees);
+                        }).catch(e => console.error(e))
                     }
                 })
 
@@ -409,19 +425,14 @@ module.exports = {
                 //     console.log('fullScreen', arg);
                 // })
 
-                socketInstance.on("student ready", (arg) => {
-                    console.log('student ready', arg, socketInstance.id);
-                    // app.locals.ioClients.push(room)
-                    io.of("/quiz").to(room).emit("hello", arg.firstname);
-                })
             }
         },
         onProctorConnect: (io, app) => {
             return (socketInstance) => {
                 let room = lodash.get(socketInstance, 'handshake.query.room')
                 let examSessionId = lodash.get(socketInstance, 'handshake.query.examSessionId')
-                let examineeId = lodash.get(socketInstance, 'handshake.auth.token')
-                console.log('proctor CONNECT', 'examSessionId', examSessionId, socketInstance.id, examineeId)
+                // let examineeId = lodash.get(socketInstance, 'handshake.auth.token')
+                console.log('PROCTOR HI', 'examSessionId', examSessionId)
 
                 // console.log(app.locals.ioClients)
                 if (room) {
@@ -431,18 +442,18 @@ module.exports = {
 
                 socketInstance.on("disconnect", (reason) => {
                     // console.log('disconnect', reason)
-                    console.log('proctor DISCO', 'examSessionId', examSessionId, socketInstance.id, examineeId)
+                    console.log('PROCTOR bye', 'examSessionId', examSessionId)
                 })
 
-                socketInstance.on("proctor administer", (arg) => {
-                    // console.log('proctor administer', arg);
-                })
 
                 socketInstance.on("fullScreen", (arg) => {
                     console.log('fullScreen', arg);
                 })
 
-                socketInstance.on("go", (arg) => {
+                socketInstance.on("go", (examineeId) => {
+                    if (examineeId && examSessionId) {
+                        // setExamineeStatus(app, examSessionId, examineeId, 2)
+                    }
                     io.of("/quiz").to(room).emit("start");
                 })
                 socketInstance.on("end", (arg) => {

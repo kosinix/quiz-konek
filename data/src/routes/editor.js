@@ -73,7 +73,7 @@ router.post('/editor/create', middlewares.guardRoute(['create_exam']), middlewar
             results: []
         });
 
-        // return res.send(exam)
+        return res.send(exam)
         flash.ok(req, 'exam', 'Exam created.')
         res.redirect(`/editor/${exam.id}/update`)
     } catch (err) {
@@ -183,46 +183,32 @@ router.post('/editor/:examId/delete', middlewares.guardRoute(['delete_exam']), m
     }
 });
 
-
-router.get('/editor/:examId/administer', middlewares.guardRoute(['update_exam']), middlewares.getExam(), async (req, res, next) => {
+router.get('/editor/:examId/sessions', middlewares.guardRoute(['update_exam']), middlewares.getExam(), async (req, res, next) => {
     try {
         let exam = res.exam
 
-        let examSession = {
-            examinees: [],
-            description: '',
-            venue: '',
-            date: moment().format('YYYY-MM-DD HH:mm'),
-            passcode: passwordMan.genPasscode(),
-        }
-        let data = {
-            exam: exam,
-            examSession: examSession,
-        }
-
-        // return res.send(data)
-        res.render('editor/administer.html', data);
-    } catch (err) {
-        next(err);
-    }
-});
-
-router.get('/editor/:examId/administer', middlewares.guardRoute(['update_exam']), middlewares.getExam(), async (req, res, next) => {
-    try {
-        let exam = res.exam
-        let passcodes = await req.app.locals.db.models.Passcode.findAll({
+        let examSessions = await req.app.locals.db.models.ExamSession.findAll({
             where: {
                 examId: exam.id
-            },
-            ...{
-                raw: true
             }
         })
+        let data = {
+            exam: exam,
+            examSessions: examSessions,
+            flash: flash.get(req, 'exam'),
 
-        passcodes = passcodes.map(o => {
-            o.expired = moment().isSameOrAfter(moment(o.expiredAt))
-            return o
-        })
+        }
+
+        // return res.send(examSessions)
+        res.render('editor/exam-session/sessions.html', data);
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.get('/editor/:examId/administer', middlewares.guardRoute(['update_exam']), middlewares.getExam(), async (req, res, next) => {
+    try {
+        let exam = res.exam
 
         let examSession = {
             examinees: [],
@@ -234,7 +220,6 @@ router.get('/editor/:examId/administer', middlewares.guardRoute(['update_exam'])
         let data = {
             exam: exam,
             examSession: examSession,
-            passcodes: passcodes,
         }
 
         // return res.send(data)
@@ -243,6 +228,8 @@ router.get('/editor/:examId/administer', middlewares.guardRoute(['update_exam'])
         next(err);
     }
 });
+
+
 router.post('/editor/:examId/administer', middlewares.guardRoute(['update_exam']), middlewares.getExam(), middlewares.antiCsrfCheck, async (req, res, next) => {
     try {
         let exam = res.exam
@@ -259,9 +246,10 @@ router.post('/editor/:examId/administer', middlewares.guardRoute(['update_exam']
         let examSession = await req.app.locals.db.models.ExamSession.create({
             ...data,
             status: 0,
-            examId: exam.id
+            examId: exam.id,
+            results: []
         });
-        // res.send(examSession)
+        // return res.send(examSession)
         // // await req.app.locals.db.models.Passcode.create({
         // //     examId: exam.id,
         // //     code: passwordMan.genPasscode(),
@@ -283,7 +271,7 @@ router.get('/editor/:examId/session/:examSessionId', middlewares.guardRoute(['up
             },
         })
         if (!examSession) {
-            throw new Error('aa')
+            throw new Error('Exam Session not found.')
         }
         let exam = await req.app.locals.db.models.Exam.findOne({
             where: {
@@ -317,6 +305,75 @@ router.get('/editor/:examId/session/:examSessionId', middlewares.guardRoute(['up
         next(err);
     }
 });
+router.get('/editor/:examId/session/:examSessionId/delete', middlewares.guardRoute(['update_exam']), async (req, res, next) => {
+    try {
+        let examSession = await req.app.locals.db.models.ExamSession.findOne({
+            where: {
+                id: req.params.examSessionId,
+            },
+        })
+        if (!examSession) {
+            throw new Error('Exam Session not found.')
+        }
+        let exam = await req.app.locals.db.models.Exam.findOne({
+            where: {
+                id: examSession.examId,
+            },
+        })
+        if (!examSession) {
+            throw new Error('bb')
+        }
+        const wifiName = require('wifi-name')
+        let examinees = lodash.get(req, `app.locals.ioClients.room${examSession.id}`, [])
+        examSession.examinees = examSession.examinees.map(e => {
+            // e.status = 0
+            if(examinees.includes(e.id)){
+                e.status = 1
+            }
+            return e
+        })
+        // console.log(lodash.get(req, `app.locals.ioClients.room${examSession.passcode}`))
+        let data = {
+            exam: exam,
+            examSession: examSession,
+            examinees: examSession.examinees,
+            wifiName: wifiName.sync(),
+            connections: network.connections(CONFIG.app.port),
+        }
+
+        // return res.send(data)
+        res.render('editor/exam-session/delete.html', data);
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.post('/editor/:examId/session/:sessionId/delete', middlewares.guardRoute(['update_exam']), middlewares.antiCsrfCheck, async (req, res, next) => {
+    try {
+        let exam = await req.app.locals.db.models.Exam.findOne({
+            where: {
+                id: req.params.examId
+            },
+        })
+        if (!exam) throw new Error('Exam not found.')
+
+        let examSession = await req.app.locals.db.models.ExamSession.findOne({
+            where: {
+                id: req.params.sessionId,
+                examId: exam.id
+            },
+        })
+        if (!examSession) throw new Error('Exam Session not found.')
+
+        await examSession.destroy();
+
+        flash.ok(req, 'exam', 'Exam session deleted.')
+        res.redirect(`/editor/${exam.id}/sessions`)
+    } catch (err) {
+        next(err);
+    }
+});
+
 router.get('/editor/network', middlewares.guardRoute(['update_exam']), async (req, res, next) => {
     try {
         const { spawnSync } = require('child_process')

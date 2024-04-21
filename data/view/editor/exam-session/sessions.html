@@ -1,0 +1,66 @@
+{% extends "document.html" %}
+
+{% block body %}
+<div id="vApp" v-cloak :data-pending="pending" class="col-md-12">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <div class="d-flex align-items-start">
+            <h1 class="h3">Update Exam</h1>
+        </div>
+        {% include 'editor/exam-session/button-group-top.html' %}
+    </div>
+    <div>
+        {% include 'editor/tabs.html' %}
+    </div>
+    <div class="tab-content p-3">
+        {% include 'parts/flash.html' %}
+        {% if examSessions.length <= 0 %}
+            <a href="/editor/{{exam.id}}/administer" class="btn btn-sm btn-primary">Administer</a>
+        {% else %}
+            <table class="table table-sm">
+                <tr>
+                    <th>Date</th>
+                    <th></th>
+                </tr>
+                {% for examSession in examSessions %}
+                <tr>
+                    <td>{{examSession.date}}</td>
+                    <td><a title="{{examSession.id}}" href="/editor/{{examSession.examId}}/session/{{examSession.id}}">View</a></td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+    var acsrf = '{{acsrf}}';
+    var exam = {{ exam|default ({}, true) | stringify | safe}};
+    var examSessions = {{ examSessions|default ([], true) | stringify | safe}};
+    var vApp = new Vue({
+        el: '#vApp',
+        delimiters: ["${", "}"],
+        mixins: [
+            VueMixins
+        ],
+        data: {
+            pending: false,
+            exam: exam,
+            examSessions: examSessions
+        },
+        mounted: function () {
+            const me = this;
+
+        },
+        computed: {
+
+        },
+        methods: {
+            
+        }
+    });
+</script>
+{% endblock %}

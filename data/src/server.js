@@ -84,13 +84,17 @@
         let examSessionId = lodash.get(socketInstance, 'handshake.query.examSessionId')
         let examineeId = lodash.get(socketInstance, 'handshake.auth.token')
 
-        if (examineeId) {
-            let examinees = lodash.get(app, `locals.ioClients.room${examSessionId}`, [])
-            console.log('examinees', examinees)
-            if (examinees.indexOf(examineeId) > -1) {
-                return next(new Error("Duplicate view."));
+        if (examSessionId && examineeId) {
+            let examSession = await app.locals.db.models.ExamSession.findByPk(examSessionId)
+            if (examSession) {
+                // console.log('examinees', examSession.examinees.map(e => `${e.lastName}: ${e.status}`))
+                let alreadJoined = examSession.examinees.find(e => {
+                    return e.id === examineeId && e.status > 0
+                })
+                if(alreadJoined){
+                    return next(new Error("Duplicate view."));
+                }
             }
-
         }
         next()
     });

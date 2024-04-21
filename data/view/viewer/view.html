@@ -215,20 +215,9 @@
                 })
             });
 
-            socket.on('addExamineeList', (payload) => {
-                console.log('addExamineeList: ', payload);
-                let index = me.examSession.examinees.findIndex(o => {
-                    return o.id == payload
-                })
-                me.examSession.examinees[index].status = 1
-            });
-
-            socket.on('reduceExamineeList', (payload) => {
-                console.log('reduceExamineeList: ', payload);
-                let index = me.examSession.examinees.findIndex(o => {
-                    return o.id == payload
-                })
-                me.examSession.examinees[index].status = 0
+            socket.on('updateExamineeList', (examinees) => {
+                console.log('updateExamineeList: ', examinees);
+                me.examSession.examinees = examinees
             });
 
             socket.on('start', () => {
@@ -245,8 +234,6 @@
         methods: {
             onReady: function () {
                 var me = this;
-
-                socket.emit("student ready", me.examineeId)
 
                 socket.auth.token = me.examineeId;
                 socket.disconnect().connect();

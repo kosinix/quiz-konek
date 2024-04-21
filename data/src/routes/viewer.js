@@ -60,6 +60,7 @@ router.post('/view/:examSessionId', middlewares.getExamSession(), async (req, re
         let data = req.body
         let results = data
 
+        console.log(res.examSession)
         const QUESTIONS = res.exam.questions.map(q => {
             let answers = q.choices.map(c => c.isCorrect)
             return {
@@ -79,7 +80,7 @@ router.post('/view/:examSessionId', middlewares.getExamSession(), async (req, re
             if (answerKey) {
                 q.correct = answerKey.answers
                 for (let x = 0; x < q.answers.length; x++) {
-                    console.log(x, q.answers[x], '===', answerKey.answers[x])
+                    // console.log(x, q.answers[x], '===', answerKey.answers[x])
                     if (answerKey.answers[x] && answerKey.answers[x] === q.answers[x]) {
                         q.score = answerKey.points ?? 1
                         totalScore += answerKey.points ?? 1

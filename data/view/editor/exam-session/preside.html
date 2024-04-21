@@ -7,7 +7,7 @@
         <div class="d-flex align-items-start">
             <h1 class="h3">Presiding Exam</h1>
         </div>
-        {% include 'editor/button-group-top.html' %}
+        {% include 'editor/exam-session/button-group-top.html' %}
     </div>
     <div>
         {% include 'editor/tabs.html' %}
@@ -84,21 +84,12 @@
             });
 
 
-            socket.on('addExamineeList', (payload) => {
-                console.log('addExamineeList: ', payload);
-                let index = me.examSession.examinees.findIndex( o => {
-                    return o.id == payload
-                })
-                me.examSession.examinees[index].status = 1
+            socket.on('updateExamineeList', (examinees) => {
+                console.log('updateExamineeList: ', examinees);
+                me.examSession.examinees = examinees
             });
 
-            socket.on('reduceExamineeList', (payload) => {
-                console.log('reduceExamineeList: ', payload);
-                let index = me.examSession.examinees.findIndex( o => {
-                    return o.id == payload
-                })
-                me.examSession.examinees[index].status = 0
-            });
+            
            
         },
         computed: {
